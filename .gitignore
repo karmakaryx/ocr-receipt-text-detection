@@ -226,10 +226,10 @@ $RECYCLE.BIN/
 
 # Custom
 data/
-output/
+outputs/
 wandb/
 *.tar*
 *.pkl
 *.h5
 *.pt
-*.yaml
+baseline.ipynb
