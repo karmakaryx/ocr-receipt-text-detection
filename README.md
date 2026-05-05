@@ -197,15 +197,15 @@ images:
 
 ## **🕵️‍♀️ Hypothesis Testing**
 #### 1. 요약문 스타일 통일
-- **가설:** "~합니다." "~한다." "~함." 등의 불규칙한 동사 어미를 일치시키면 ROUGE가 오르지 않을까?
-- **결과:** 동일 코드에 동사 어미만 격식체로 일관화 시켰음에도 리더보드 점수 오히려 하락
+- **가설:**
+- **결과:**
 
 ---
 
 ## **💡 Insights from Trial and Error**
 #### EDA & Data Preprocessing
-- **시도:** 요약 양쪽의 과다한 공백을 제거하기 위해 EOS 토큰 생성 유도 및 후처리 로직 최적화
-- **결과:** 리더보드에 0.003점 정도 기여? 😑
+- **시도:**
+- **결과:**
 
 ---
 
@@ -216,19 +216,15 @@ images:
       <th align="center">NO.</th>
       <th align="center">DATE</th>
       <th align="center">MODEL</th>
-      <th align="center">H-Mean(CV)</th>
-      <th align="center">Precision</th>
-      <th align="center">Recall</th>
-      <th align="center">H-Mean(LB)</th>
-      <th align="center">Precision</th>
-      <th align="center">Recall</th>
+      <th align="center" colspan="3">H-Mean/Precision/Recall(CV)</th>
+      <th align="center" colspan="3">H-Mean/Precision/Recall(LB)</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td align="center">01</td>
       <td align="center">260504</td>
-      <td>DBNet_ResNet18 (img 640)</td>
+      <td>DBNet_ResNet18</td>
       <td align="center">0.8726</td>
       <td align="center">0.9581</td>
       <td align="center">0.8106</td>
@@ -261,7 +257,7 @@ images:
     <tr>
       <td align="center">04</td>
       <td align="center">260505</td>
-      <td>DBNet_ResNet50 (img 1024)</td>
+      <td>DBNet_ResNet50</td>
       <td align="center">0.9331</td>
       <td align="center">0.9593</td>
       <td align="center">0.9175</td>
@@ -296,16 +292,18 @@ images:
 ---
 
 ## **📜 Version Log**
-> V01: epoch=8-step=1845.ckpt
+> **V01: epoch=8-step=1845.ckpt**
+- image size 640 기본 유지
 - dataset_base_path 변경, train wandb 사용
 
-> V02: epoch=29-step=6150.ckpt
+> **V02: epoch=29-step=6150.ckpt**
 - GPU 활용 최적화를 위한 hyperparameter tuning
 
-> V03: epoch=22-step=4715.ckpt
+> **V03: epoch=22-step=4715.ckpt**
 - optimizer: AdamW, weight_decay: 0.01
 
-> V04: epoch=21-step=4510.ckpt
+> **V04: epoch=21-step=4510.ckpt**
+- image size 1024 변경
 - weight_decay: 0.0001 (rollback), lr: 0.0001
 - val/hmean 기준 checkpoint 생성
 
