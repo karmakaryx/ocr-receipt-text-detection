@@ -256,11 +256,22 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
       <th align="center">NO.</th>
       <th align="center">DATE</th>
       <th align="center">MODEL</th>
-      <th align="center" colspan="3">H-Mean | Precision | Recall (CV)</th>
-      <th align="center" colspan="3">H-Mean | Precision | Recall (LB)</th>
+      <th align="center" colspan="3">H-Mean/Precision/Recall (CV)</th>
+      <th align="center" colspan="3">H-Mean/Precision/Recall (LB)</th>
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td align="center">09</td>
+      <td align="center">260507</td>
+      <td>DBNetPlus_HRNet-W48</td>
+      <td align="center"></td>
+      <td align="center"></td>
+      <td align="center"></td>
+      <td align="center"><b></b></td>
+      <td align="center"><b></b></td>
+      <td align="center"><b></b></td>
+    </tr>
     <tr>
       <td align="center">08</td>
       <td align="center">260507</td>
@@ -347,31 +358,34 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 ---
 
 ## **📜 Version Log**
-> **V01: epoch=8-step=1845.ckpt**
+#### V01: epoch=8-step=1845.ckpt
 - image size 640 기본 유지
 - dataset_base_path 변경, train wandb 사용
 
-> **V02: epoch=29-step=6150.ckpt**
+#### V02: epoch=29-step=6150.ckpt
 - use_polygon: True, max_epochs: 30
 - GPU 활용 최적화를 위한 hyperparameter tuning
 
-> **V03: epoch=22-step=4715.ckpt**
+#### V03: epoch=22-step=4715.ckpt
 - optimizer: AdamW, weight_decay: 0.01
 
-> **V04: epoch=21-step=4510.ckpt**
+#### V04: epoch=21-step=4510.ckpt
 - image size 1024 변경
 - weight_decay: 0.0001 (rollback), lr: 0.0001
 - in_channels: [256, 512, 1024, 2048]
 - val/hmean 기준 checkpoint 생성
 
-> **V07: epoch=25-step=10634.ckpt**
+#### V07: epoch=25-step=10634.ckpt
 - 아키텍처 변경 과정의 이슈로 V05-V06 실험 폐기, 일단 ResNet-18로 복원
 - lr: 0.001 (rollback)
 - DBNet++ 적용, image size 1280
 
-> **V08: epoch=18-step=31084.ckpt**
+#### V08: epoch=18-step=31084.ckpt
 - 백본 모델 변경으로 학습 시간 길어지기 시작하여 tmux 적용
 - 로컬 점수는 최고점 갱신했으나 LB 갱신못함
+
+#### V09:
+- scheduler: CosineAnnealingLR
 
 ---
 
