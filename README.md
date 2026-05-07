@@ -256,15 +256,15 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
       <th align="center">NO.</th>
       <th align="center">DATE</th>
       <th align="center">MODEL</th>
-      <th align="center" colspan="3">H-Mean/Precision/Recall (CV)</th>
-      <th align="center" colspan="3">H-Mean/Precision/Recall (LB)</th>
+      <th align="center" colspan="3"><sub>H-Mean/Precision/Recall(CV)</sub></th>
+      <th align="center" colspan="3"><sub>H-Mean/Precision/Recall(LB)</sub></th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td align="center">09</td>
       <td align="center">260507</td>
-      <td>DBNetPlus_HRNet-W48</td>
+      <td>DBNet++_HRNet-W48</td>
       <td align="center"></td>
       <td align="center"></td>
       <td align="center"></td>
@@ -275,7 +275,7 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
     <tr>
       <td align="center">08</td>
       <td align="center">260507</td>
-      <td>DBNetPlus_HRNet-W48</td>
+      <td>DBNet++_HRNet-W48</td>
       <td align="center">0.9736</td>
       <td align="center">0.9848</td>
       <td align="center">0.9648</td>
@@ -286,7 +286,7 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
     <tr>
       <td align="center">07</td>
       <td align="center">260506</td>
-      <td>DBNetPlus_ResNet-18</td>
+      <td>DBNet++_ResNet-18</td>
       <td align="center">0.9649</td>
       <td align="center">0.9806</td>
       <td align="center">0.9536</td>
@@ -354,6 +354,8 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - **Time per Epoch:** 6m 12s
 - **Selected CKPT:** Epoch 25
 - **Accuracy:** 0.9785
+
+### Leaderboard Rank: No. 1 🏆
 
 ---
 
