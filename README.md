@@ -198,6 +198,8 @@ images:
 ![word_size_valid](./assets/word_size_valid.png)
 
 ### Data Preprocessing
+- 열 감지
+- 영수증 사이즈로 자르기
 
 ---
 
@@ -250,14 +252,16 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 ---
 
 ## **📊 Experiment Logger**
+> **H: H-Mean, P: Precision, R: Recall<br>**
+> 실험기록이 너무 많으므로 #04 이후는 주요 변화 건만 기재
 <table>
   <thead>
     <tr>
       <th align="center">NO.</th>
       <th align="center">DATE</th>
       <th align="center">MODEL</th>
-      <th align="center" colspan="3"><sub>H-Mean/Precision/Recall(CV)</sub></th>
-      <th align="center" colspan="3"><sub>H-Mean/Precision/Recall(LB)</sub></th>
+      <th align="center" colspan="3">H&nbsp;&nbsp;|&nbsp;&nbsp;P&nbsp;&nbsp;|&nbsp;&nbsp;R&nbsp;&nbsp;&nbsp;(CV)</th>
+      <th align="center" colspan="3">H&nbsp;&nbsp;|&nbsp;&nbsp;P&nbsp;&nbsp;|&nbsp;&nbsp;R&nbsp;&nbsp;&nbsp;(LB)</th>
     </tr>
   </thead>
   <tbody>
@@ -355,7 +359,6 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - **Selected CKPT:** Epoch 25
 - **Accuracy:** 0.9785
 
-### Leaderboard Rank: No. 1 🏆
 
 ---
 
