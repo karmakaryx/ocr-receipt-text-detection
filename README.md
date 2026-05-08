@@ -197,9 +197,14 @@ images:
 ![word_size_train](./assets/word_size_train.png)
 ![word_size_valid](./assets/word_size_valid.png)
 
-### Data Preprocessing
-- 열 감지
-- 영수증 사이즈로 자르기
+### Data Postprocessing
+##### 1. V08 실험 결과로 평가 영수증 시각화
+> 구겨진 영수증 heatmap: 100% 검출<br>
+> 글자 수 많고 밝기 어둡고 불규칙한 영수증 bounding box: 100% 검출
+<p align="center">
+  <img src="./assets/heatmap_000242.jpg" width="45%">
+  <img src="./assets/boxes_002971.jpg" width="45%">
+</p>
 
 ---
 
@@ -234,7 +239,6 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 ---
 
 ## **🕵️‍♀️ Hypothesis Testing**
-#### 1. 배경 제거
 
 ---
 
@@ -249,10 +253,15 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - **증상:** batch_size를 계속 낮춰도 GPU OOM 발생
 - **조치:** batch_size를 2까지 낮춤
 
+#### V09: 절취선 제거 후처리 실패
+
+#### V10: scheduler 누락되어 기본 학습률 적용
+- **증상:** scheduler와 학습률을 반영했는데도 최종 best epoch 3건이 동일함, 10시간 낭비
+- **조치:** architecture 오류 수정 반영, 기존에도 스케줄러가 반영 없었던 것으로 추정
+
 ---
 
 ## **📊 Experiment Logger**
-> **H: H-Mean, P: Precision, R: Recall<br>**
 > 실험기록이 너무 많으므로 #04 이후는 주요 변화 건만 기재
 <table>
   <thead>
@@ -260,21 +269,21 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
       <th align="center">NO.</th>
       <th align="center">DATE</th>
       <th align="center">MODEL</th>
-      <th align="center" colspan="3">H&nbsp;&nbsp;|&nbsp;&nbsp;P&nbsp;&nbsp;|&nbsp;&nbsp;R&nbsp;&nbsp;&nbsp;(CV)</th>
-      <th align="center" colspan="3">H&nbsp;&nbsp;|&nbsp;&nbsp;P&nbsp;&nbsp;|&nbsp;&nbsp;R&nbsp;&nbsp;&nbsp;(LB)</th>
+      <th align="center" colspan="3">H-Mean/Precision/Recall (CV)</th>
+      <th align="center" colspan="3">H-Mean/Precision/Recall (LB)</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td align="center">09</td>
-      <td align="center">260507</td>
+      <td align="center">10</td>
+      <td align="center">260508</td>
       <td>DBNet++_HRNet-W48</td>
-      <td align="center"></td>
-      <td align="center"></td>
-      <td align="center"></td>
-      <td align="center"><b></b></td>
-      <td align="center"><b></b></td>
-      <td align="center"><b></b></td>
+      <td align="center">0.9671</td>
+      <td align="center">0.9851</td>
+      <td align="center">0.9539</td>
+      <td align="center"><b>0.9714</b></td>
+      <td align="center"><b>0.9869</b></td>
+      <td align="center"><b>0.9596</b></td>
     </tr>
     <tr>
       <td align="center">08</td>
@@ -359,7 +368,6 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - **Selected CKPT:** Epoch 25
 - **Accuracy:** 0.9785
 
-
 ---
 
 ## **📜 Version Log**
@@ -389,21 +397,6 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - 백본 모델 변경으로 학습 시간 길어지기 시작하여 tmux 적용
 - 로컬 점수는 최고점 갱신했으나 LB 갱신못함
 
-#### V09:
+#### V10: epoch=11-step=19632.ckpt
 - scheduler: CosineAnnealingLR
-
----
-
-## **🛠️ etc.**
-### Reference
-- [[arXiv] Real-time Scene Text Detection with Differentiable Binarization](https://arxiv.org/pdf/1911.08947.pdf)
-- [[GitHub] DBNet](https://github.com/MhLiao/DB)
-- [[arXiv] Real-Time Scene Text Detection with Differentiable Binarization and Adaptive Scale Fusion](https://arxiv.org/pdf/2202.10304.pdf)
-- [[Docs] Hydra](https://hydra.cc/docs/intro/)
-- [[Docs] PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/)
-- [[arXiv] Character-Level Evaluation for Text Detection and Recognition Tasks](https://arxiv.org/abs/2006.06244)
-- [[GitHub] CLEval](https://github.com/clovaai/CLEval)
-
-### Project Retrospective
-
-<br>
+- early stopping 적용
