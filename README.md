@@ -3,6 +3,7 @@
 ## **💻 Project Overview**
 ### Environment
 - **OS:** Linux Ubuntu 20.04.6 LTS
+- **CPU count:** 24 (Logical CPU count: 48)
 - **GPU:** NVIDIA GeForce RTX 3090 (24GB)
 - **NVIDIA Driver Version:** 535.86.10
 - **CUDA Version:** 12.2 (Runtime: 11.8)
@@ -198,7 +199,7 @@ images:
 ![word_size_valid](./assets/word_size_valid.png)
 
 ### Data Postprocessing
-##### 1. V08 실험 결과로 평가 영수증 시각화
+##### 1. 평가 영수증 시각화 (V08 실험 결과로 중간 점검)
 > 구겨진 영수증 heatmap: 100% 검출<br>
 > 글자 수 많고 밝기 어둡고 불규칙한 영수증 bounding box: 100% 검출
 <p align="center">
@@ -239,6 +240,20 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 ---
 
 ## **🕵️‍♀️ Hypothesis Testing**
+#### 1. 절취선 등 기호의 박스 포함 여부
+- **가설:** 글자가 아닌 기호나 선 등은 박스에서 제외해야 하지 않을까?<br>
+  최종 추론 json에서 일단 지나치게 길고 가는 선만 제거하는 후처리 로직을 적용해보았다.
+<p align="center">
+  <img src="./assets/boxes_000494.jpg" width="45%">
+  <img src="./assets/compare_000494.jpg" width="45%">
+</p>
+
+- **결과:** LB 점수 떡락. 영수증에 인쇄된 내용은 바코드 빼고 모두 추가되어야 한다.
+
+#### 2. 영수증 배경 제거
+- **가설:** test.json을 열어보면 이미지 사이즈가 기재되어 있는데 (이미지의 실제 사이즈와 동일 확인) 모두 제각각이다.<br>
+  이걸 활용할 방법이 있을까? 평가 데이터에서 배경을 모두 쳐내고 영수증만 남기면 어떨까?
+- **결과:**
 
 ---
 
@@ -253,16 +268,24 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - **증상:** batch_size를 계속 낮춰도 GPU OOM 발생
 - **조치:** batch_size를 2까지 낮춤
 
-#### V09: 절취선 제거 후처리 실패
-
 #### V10: scheduler 누락되어 기본 학습률 적용
 - **증상:** scheduler와 학습률을 반영했는데도 최종 best epoch 3건이 동일함, 10시간 낭비
-- **조치:** architecture 오류 수정 반영, 기존에도 스케줄러가 반영 없었던 것으로 추정
+- **조치:** architecture 오류 수정 반영, W&B 그래프를 보면 기존에도 스케줄러가 반영 없었던 것으로 추정
+
+#### V11: best epoch 갱신 정체 후 지속적인 갱신
+- **증상:** 7차 이상 epoch 갱신이 정체되어 실험을 중단하려는 때에 갑작스런 뒷심 갱신?
+- **교훈:** scheduler 이슈로 CosineAnnealingLR이 제대로 작동하지 못했었기 때문에 patience를 10회로 늘린 보람이 있나 싶었는데..ㅠ 삼진아웃은 국룰인가.
+
+#### V12:
+<p align="center">
+  <img src="./assets/v07.png" width="45%">
+  <img src="./assets/v11.png" width="45%">
+</p>
 
 ---
 
 ## **📊 Experiment Logger**
-> 실험기록이 너무 많으므로 #04 이후는 주요 변화 건만 기재
+> 실험기록이 많으므로 주요 변화 건만 기재
 <table>
   <thead>
     <tr>
@@ -274,6 +297,28 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td align="center">12</td>
+      <td align="center">260509</td>
+      <td>DBNet++_HRNet-W44</td>
+      <td align="center"></td>
+      <td align="center"></td>
+      <td align="center"></td>
+      <td align="center"><b></b></td>
+      <td align="center"><b></b></td>
+      <td align="center"><b></b></td>
+    </tr>
+    <tr>
+      <td align="center">11</td>
+      <td align="center">260508</td>
+      <td>DBNet++_HRNet-W48</td>
+      <td align="center">0.9770</td>
+      <td align="center">0.9846</td>
+      <td align="center">0.9711</td>
+      <td align="center"><b>0.9768</b></td>
+      <td align="center"><b>0.9890</b></td>
+      <td align="center"><b>0.9665</b></td>
+    </tr>
     <tr>
       <td align="center">10</td>
       <td align="center">260508</td>
@@ -300,9 +345,9 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
       <td align="center">07</td>
       <td align="center">260506</td>
       <td>DBNet++_ResNet-18</td>
-      <td align="center">0.9649</td>
-      <td align="center">0.9806</td>
-      <td align="center">0.9536</td>
+      <td align="center">0.9677</td>
+      <td align="center">0.9831</td>
+      <td align="center">0.9547</td>
       <td align="center"><b>0.9785</b></td>
       <td align="center"><b>0.9867</b></td>
       <td align="center"><b>0.9717</b></td>
@@ -317,17 +362,6 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
       <td align="center"><b>0.9564</b></td>
       <td align="center"><b>0.9686</b></td>
       <td align="center"><b>0.9509</b></td>
-    </tr>
-    <tr>
-      <td align="center">03</td>
-      <td align="center">260505</td>
-      <td>DBNet_ResNet-18</td>
-      <td align="center">0.9012</td>
-      <td align="center">0.9765</td>
-      <td align="center">0.8433</td>
-      <td align="center"><b>0.9466</b></td>
-      <td align="center"><b>0.9772</b></td>
-      <td align="center"><b>0.9227</b></td>
     </tr>
     <tr>
       <td align="center">02</td>
@@ -355,19 +389,6 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 </table>
 <br>
 
-![wandb_01](./assets/wandb_01.png)
-<br>
-
----
-
-## **🚀 Result**
-### Champion Model Info
-- **Version:** V07 (DBNet++ / ResNet-18)
-- **Training Time:** 3h 6m
-- **Time per Epoch:** 6m 12s
-- **Selected CKPT:** Epoch 25
-- **Accuracy:** 0.9785
-
 ---
 
 ## **📜 Version Log**
@@ -379,12 +400,9 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - use_polygon: True, max_epochs: 30
 - GPU 활용 최적화를 위한 hyperparameter tuning
 
-#### V03: epoch=22-step=4715.ckpt
-- optimizer: AdamW, weight_decay: 0.01
-
 #### V04: epoch=21-step=4510.ckpt
 - image size 1024 변경
-- weight_decay: 0.0001 (rollback), lr: 0.0001
+- optimizer: AdamW, lr: 0.0001
 - in_channels: [256, 512, 1024, 2048]
 - val/hmean 기준 checkpoint 생성
 
@@ -400,3 +418,12 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 #### V10: epoch=11-step=19632.ckpt
 - scheduler: CosineAnnealingLR
 - early stopping 적용
+
+#### V11: epoch=36-step=60532.ckpt
+- sanity check 비활성화
+- T_max는 max_epochs와 동일하게
+- batch_size loss logging 수치 정확하게
+- patience 10으로 증가
+
+#### V12:
+- 학습 + 검증 데이터 합치기, TTA (hflip)
