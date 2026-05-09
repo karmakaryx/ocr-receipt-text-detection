@@ -3,7 +3,8 @@
 ## **💻 Project Overview**
 ### Environment
 - **OS:** Linux Ubuntu 20.04.6 LTS
-- **CPU count:** 24 (Logical CPU count: 48)
+- **System Memory**: 256GB RAM
+- **Computing Power**: 24-Core / 48-Thread Multi-core CPU
 - **GPU:** NVIDIA GeForce RTX 3090 (24GB)
 - **NVIDIA Driver Version:** 535.86.10
 - **CUDA Version:** 12.2 (Runtime: 11.8)
@@ -37,7 +38,7 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 ## **📋 Competition Info**
 ### 일정 (Timeline)
 - 2026.05.04 09:00 ~ 2026.05.14 18:00 (Competition)
-- 2026.05.15 15:00 ~ 2026.05.15 17:00 (Seminar)
+- 2026.05.15 15:00 ~ 2026.05.15 18:00 (Seminar)
 
 ### 영수증 글자 검출 대회: 영수증 사진에서 글자 위치를 정확하게 추출하는 태스크 수행
 - 목표: 모델이 더욱 강건한 성능을 낼 수 있도록 generalization과 optimization을 모두 높이면서도, 그 사이의 최적점 찾기
@@ -72,6 +73,9 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 ---
 
 ## **⚙️ Components**
+### Workflow
+![workflow](./assets/workflow.png)
+
 ### Directory
 ```
 ├── assets/...                              # README images & PDF
@@ -243,14 +247,19 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 #### 1. 절취선 등 기호의 박스 포함 여부
 - **가설:** 글자가 아닌 기호나 선 등은 박스에서 제외해야 하지 않을까?<br>
   최종 추론 json에서 일단 지나치게 길고 가는 선만 제거하는 후처리 로직을 적용해보았다.
+- **결과:** LB H-Mean 떡락. 영수증에 인쇄된 내용은 바코드 빼고 모두 추가되어야 한다.
 <p align="center">
   <img src="./assets/boxes_000494.jpg" width="45%">
   <img src="./assets/compare_000494.jpg" width="45%">
 </p>
 
-- **결과:** LB 점수 떡락. 영수증에 인쇄된 내용은 바코드 빼고 모두 추가되어야 한다.
+#### 2. 추론 후처리
+- **가설:** V11, V12 포함 Recall이 모두 현저히 낮다. 원인을 찾으면 강건한 모델이 되지 않을까?
+- **결과:** thresh 후처리로 기존 checkpoint 이용, 추론을 재반영하자 Recall 끌어올리며 LB 퀀텀점프
 
-#### 2. 영수증 배경 제거
+![recall](./assets/recall.png)
+
+#### 3. 영수증 배경 제거
 - **가설:** test.json을 열어보면 이미지 사이즈가 기재되어 있는데 (이미지의 실제 사이즈와 동일 확인) 모두 제각각이다.<br>
   이걸 활용할 방법이 있을까? 평가 데이터에서 배경을 모두 쳐내고 영수증만 남기면 어떨까?
 - **결과:**
@@ -264,7 +273,7 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - **조치:** 학습률을 0.001로 원복하고 AdamW를 차후 SGD로 변경 고려
 - **교훈:** 알고리즘이나 모델 변경 같은 큰 변경사항을 먼저 수행하지 않으면 자잘한 실험은 모두 시간낭비가 된다.
 
-#### V08: HRNet-W48 변경
+#### V08: 백본 모델 HRNet-W48 변경
 - **증상:** batch_size를 계속 낮춰도 GPU OOM 발생
 - **조치:** batch_size를 2까지 낮춤
 
@@ -276,11 +285,18 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - **증상:** 7차 이상 epoch 갱신이 정체되어 실험을 중단하려는 때에 갑작스런 뒷심 갱신?
 - **교훈:** scheduler 이슈로 CosineAnnealingLR이 제대로 작동하지 못했었기 때문에 patience를 10회로 늘린 보람이 있나 싶었는데..ㅠ 삼진아웃은 국룰인가.
 
-#### V12:
+#### V12: 잦은 loss spike
+- **증상:** batch가 2로 너무 작아 gradient가 불안정하고 loss spike가 잦다.
+- **결과:** 백본 모델 HRNet-W44로로 낮춰도 batch 2 이상은 OOM
 <p align="center">
   <img src="./assets/v07.png" width="45%">
   <img src="./assets/v11.png" width="45%">
 </p>
+
+#### V12: 데이터 증강, TTA
+- **시도:** 검증데이터를 학습에 추가, TTA (hflip)
+- **결과:** V11보다도 낮은 LB H-Mean
+- **원인:** train_dataloader에서 검증데이터 누수로 인한 checkpoint 선택 오염
 
 ---
 
@@ -298,15 +314,26 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
   </thead>
   <tbody>
     <tr>
+      <td align="center">11.2</td>
+      <td align="center">260509</td>
+      <td>DBNet++_HRNet-W48</td>
+      <td align="center"></td>
+      <td align="center"></td>
+      <td align="center"></td>
+      <td align="center"><b>0.9849</b></td>
+      <td align="center"><b>0.9853</b></td>
+      <td align="center"><b>0.9848</b></td>
+    </tr>
+    <tr>
       <td align="center">12</td>
       <td align="center">260509</td>
       <td>DBNet++_HRNet-W44</td>
       <td align="center"></td>
       <td align="center"></td>
       <td align="center"></td>
-      <td align="center"><b></b></td>
-      <td align="center"><b></b></td>
-      <td align="center"><b></b></td>
+      <td align="center"><b>0.9710</b></td>
+      <td align="center"><b>0.9861</b></td>
+      <td align="center"><b>0.9592</b></td>
     </tr>
     <tr>
       <td align="center">11</td>
@@ -387,7 +414,16 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
     </tr>
   </tbody>
 </table>
-<br>
+
+---
+
+## **🚀 Result**
+### Champion Model Info
+- **Version:** V11.2 (DBNet++ / HRNet-W48)
+- **Training Time:** 13h 14m
+- **Time per Epoch:** 20m 54s
+- **Selected CKPT:** Epoch 36
+- **Accuracy:** 0.9849
 
 ---
 
@@ -425,5 +461,12 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - batch_size loss logging 수치 정확하게
 - patience 10으로 증가
 
-#### V12:
+#### V12: epoch=25-step=47788.ckpt
 - 학습 + 검증 데이터 합치기, TTA (hflip)
+- predict postprocessing
+
+#### V13:
+- 검증 데이터 누수로 인한 V11 rollback
+- augmentation 추가: bright & contrast
+- unclip_ratio 파라미터화
+- hyperparameter 조정
