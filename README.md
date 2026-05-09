@@ -202,14 +202,22 @@ images:
 ![word_size_train](./assets/word_size_train.png)
 ![word_size_valid](./assets/word_size_valid.png)
 
-### Data Postprocessing
-##### 1. 평가 영수증 시각화 (V08 실험 결과로 중간 점검)
+#### 7. 박스 해당 범위 (훈련 & 검증 bounding box)
+> 바코드는 범위 해당없음 (바코드 숫자는 해당)<br>
+> 뒷면 글자 비침, 타 영수증 이염, 로고, 낙서, 개인정보 마스킹 등은 불규칙하게 범위 해당<br>
+> 영수증과 무관한 바깥 배경에 존재하는 글자도 박스에 포함되는 경우 존재
+
+#### 8. 평가 영수증 시각화 (V08 실험 결과로 중간 점검)
 > 구겨진 영수증 heatmap: 100% 검출<br>
 > 글자 수 많고 밝기 어둡고 불규칙한 영수증 bounding box: 100% 검출
 <p align="center">
   <img src="./assets/heatmap_000242.jpg" width="45%">
   <img src="./assets/boxes_002971.jpg" width="45%">
 </p>
+
+#### 9. polygon 형태 비교
+> 훈련/검증 데이터: 선은 직선에 가깝고 모서리는 사각형에 가깝다.<br>
+> 평가 데이터: 선이 자글자글하고 모서리가 둥글다.
 
 ---
 
@@ -235,7 +243,7 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 #### 2. ResNet-50
 - ResNet-18과 특징은 동일하나 층이 더 깊고 BottleNeck 구조를 사용하여 복잡한 텍스트 패턴을 더 잘 학습함
 
-#### 3. HRNet-W48
+#### 3. HRNet (W44/W48)
 - 이미지의 해상도를 낮췄다가 다시 높이는 기존 방식과 달리, 학습 내내 고해상도를 유지하는 구조
 - 다양한 해상도의 분기를 병렬로 연결하여 정보를 계속 교환
 - 정교한 위치 탐색: 텍스트 영역의 경계선이나 아주 작은 글자를 검출할 때 공간 정보 손실이 적어 정확도가 매우 높음
@@ -253,16 +261,23 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
   <img src="./assets/compare_000494.jpg" width="45%">
 </p>
 
-#### 2. 추론 후처리
+#### 2.
+- **가설:** 파일명, bounding box 등을 근거로, 동일 라벨링 업체가 동일 방법으로 자동화 검출한 뒤 훈련/검증/평가 데이터로 랜덤 분류한 것으로 추정<br>
+  그러면 인간의 기준으로 훈련, 검증 데이터의 박스 오류(뒷면 글씨, 낙서, 개인정보 마스킹 일관성 없음, 배경 글자 등)는 GT에도 동일하게 적용될 것이다.
+- **결과:**
+
+#### 3. 평가 데이터에서 배경을 모두 쳐내고 영수증만 남기면 어떨까?
+- 가설 2를 근거로 배경에 있는 글자도 훈련데이터에 포함 확인. 배경은 쳐내면 안될듯
+
+#### 4. 추론 후처리
 - **가설:** V11, V12 포함 Recall이 모두 현저히 낮다. 원인을 찾으면 강건한 모델이 되지 않을까?
 - **결과:** thresh 후처리로 기존 checkpoint 이용, 추론을 재반영하자 Recall 끌어올리며 LB 퀀텀점프
 
 ![recall](./assets/recall.png)
 
-#### 3. 영수증 배경 제거
+#### 6. 영수증 배경 제거
 - **가설:** test.json을 열어보면 이미지 사이즈가 기재되어 있는데 (이미지의 실제 사이즈와 동일 확인) 모두 제각각이다.<br>
-  이걸 활용할 방법이 있을까? 평가 데이터에서 배경을 모두 쳐내고 영수증만 남기면 어떨까?
-- **결과:**
+  이걸 활용할 방법이 있을까?
 
 ---
 
@@ -314,7 +329,7 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
   </thead>
   <tbody>
     <tr>
-      <td align="center">11.2</td>
+      <td align="center"></td>
       <td align="center">260509</td>
       <td>DBNet++_HRNet-W48</td>
       <td align="center"></td>
@@ -414,6 +429,10 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
     </tr>
   </tbody>
 </table>
+<br>
+
+![wandb_01](./assets/wandb_01.png)
+<br>
 
 ---
 
@@ -424,6 +443,9 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - **Time per Epoch:** 20m 54s
 - **Selected CKPT:** Epoch 36
 - **Accuracy:** 0.9849
+
+### Presentation
+- [[PDF] OCR Seminar Presentation](https://github.com/karmakaryx/ocr-receipt-text-detection/blob/main/assets/semiar_ocr.pdf)
 
 ---
 
