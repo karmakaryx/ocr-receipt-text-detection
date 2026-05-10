@@ -96,68 +96,68 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 │   │   │   │   ├── loss/
 │   │   │   │   │   └── db_loss.yaml
 │   │   │   │   └── model_example.yaml      # 각 모델 모듈의 설정 파일 및 Optimizer 지정
-│   │   │   ├── base.yaml
+│   │   │   ├── base.yaml                   # Hydra 경로 관리 메인 설정
 │   │   │   └── example.yaml                # 각 모듈의 설정 파일 지정
 │   │   ├── predict.yaml                    # Runner를 실행할 때 필요한 설정값
 │   │   ├── test.yaml                       # Runner를 실행할 때 필요한 설정값
 │   │   └── train.yaml                      # Runner를 실행할 때 필요한 설정값
-│   ├── ocr/                                # 각 디렉토리마다 __init__.py 존재
+│   ├── ocr/                                # 각 디렉토리마다 __init__.py 존재 생략
 │   │   ├── datasets/
-│   │   │   ├── base.py
-│   │   │   ├── db_collate_fn.py
-│   │   │   └── transforms.py
+│   │   │   ├── base.py                     # 데이터 로딩 및 전처리를 위한 기본 추상 클래스
+│   │   │   ├── db_collate_fn.py            # 학습 배치를 위한 데이터 정렬 및 패딩 처리 로직
+│   │   │   └── transforms.py               # 이미지 증강 및 텐서 변환 정의
 │   │   ├── lightning_modules/
-│   │   │   ├── callbacks/
-│   │   │   └── ocr_pl.py
+│   │   │   ├── callbacks/                  # 학습 중 특정 시점에 실행되는 보조 로직
+│   │   │   └── ocr_pl.py                   # PyTorch Lightning 기반 학습/검증 루프 통합 관리
 │   │   ├── metrics/
-│   │   │   ├── box_types.py
-│   │   │   ├── cleval_metric.py
-│   │   │   ├── data.py
-│   │   │   ├── eval_functions.py
-│   │   │   └── utils.py
+│   │   │   ├── box_types.py                # 좌표 타입 정의 및 유효성 검사
+│   │   │   ├── cleval_metric.py            # OCR 대회 표준 평가 지표 계산 로직
+│   │   │   ├── data.py                     # 평가에 필요한 데이터 구조화 및 핸들링
+│   │   │   ├── eval_functions.py           # GT와 예측값 비교를 위한 세부 평가 함수
+│   │   │   └── utils.py                    # 지표 계산 속도 향상 및 보조 유틸리티
 │   │   ├── models/
 │   │   │   ├── decoder/
-│   │   │   │   ├── asf.py
-│   │   │   │   └── unet.py
+│   │   │   │   ├── asf.py                  # Adaptive Scale Fusion (다양한 크기의 텍스트 검출 최적화)
+│   │   │   │   └── unet.py                 # 검출 성능 향상을 위한 U-Net 기반 디코더 구조
 │   │   │   ├── encoder/
-│   │   │   │   └── timm_backbone.py
+│   │   │   │   └── timm_backbone.py        # timm 라이브러리를 활용한 다양한 사전학습 백본 지원
 │   │   │   ├── head/
-│   │   │   │   ├── db_head.py
-│   │   │   │   └── db_postprocess.py
-│   │   │   ├── loss/
+│   │   │   │   ├── db_head.py              # Differentiable Binarization 방식의 최종 검출 헤드
+│   │   │   │   └── db_postprocess.py       # 확률 맵을 실제 박스 좌표로 변환하는 후처리 로직
+│   │   │   ├── loss/                       # 다양한 손실 함수들
 │   │   │   │   ├── bce_loss.py
-│   │   │   │   ├── db_loss.py
+│   │   │   │   ├── db_loss.py              # DBNet 학습을 위한 전용 복합 손실 함수
 │   │   │   │   ├── dice_loss.py
 │   │   │   │   └── l1_loss.py
-│   │   │   └── architecture.py
+│   │   │   └── architecture.py             # encoder-decoder-head를 조립하는 전체 모델 설계도
 │   │   └── utils/
-│   │       ├── convert_submission.py
-│   │       └── ocr_utils.py
+│   │       ├── convert_submission.py       # 최종 제출 CSV 변환 유틸리티
+│   │       └── ocr_utils.py                # 모델 예측 결과 시각화 유틸리티
 │   ├── outputs/                            # (이하 GitHub 관리안함)
 │   │   ├── ocr_training/
-│   │   │   ├── .hydra/...
-│   │   │   ├── checkpoints/...
-│   │   │   ├── logs/...
-│   │   │   └── submissions/...
-│   │   └── submission.csv
+│   │   │   ├── .hydra/...                  # 실험 최종 설정값 및 오버라이드 스냅샷
+│   │   │   ├── checkpoints/...             # 학습된 모델 가중치(.ckpt) 저장
+│   │   │   ├── logs/...                    # 학습 과정 모니터링 로그
+│   │   │   └── submissions/...             # 추론 JSON (CSV 변환 전)
+│   │   └── submission.csv                  # 추론 후 제출할 파일 생성
 │   ├── runners/
-│   │   ├── predict.py
-│   │   ├── test.py
-│   │   └── train.py
-│   ├── wandb/...                           # (이하 GitHub 관리안함)
-│   ├── baseline.ipynb                      # (GitHub 관리안함)
-│   └── eda.ipynb                           # EDA
+│   │   ├── predict.py                      # 추론 실행파일
+│   │   ├── test.py                         # 검증 실행파일
+│   │   └── train.py                        # 학습 실행파일
+│   ├── wandb/...                           # W&B log (GitHub 관리안함)
+│   ├── baseline.ipynb                      # baseline guide (GitHub 관리안함)
+│   └── eda.ipynb                           # EDA Notebook
 ├── data/                                   # (이하 GitHub 관리안함)
 │   └── datasets/
 │       ├── images/
-│       │   ├── test/...
-│       │   ├── train/...
-│       │   └── val/...
+│       │   ├── test/...                    # 평가데이터
+│       │   ├── train/...                   # 학습데이터
+│       │   └── val/...                     # 검증데이터
 │       ├── jsons/
-│       │   ├── test.json
-│       │   ├── train.json
-│       │   └── val.json
-│       └── sample_submission.csv
+│       │   ├── test.json                   # 평가좌표 (이미지 사이즈만 존재)
+│       │   ├── train.json                  # 학습좌표
+│       │   └── val.json                    # 검증좌표
+│       └── sample_submission.csv           # 제출파일 template
 ├── .gitignore
 ├── README.md
 └── requirements.txt
@@ -182,6 +182,7 @@ images:
 
 #### 3. Qualitative Glimpse
 > 영수증은 이미지 크기도 작고 글자도 작고 많다. 이에 맞는 알고리즘과 백본 모델 검색할 것<br>
+> 영수증 자체는 세로로 긴 형태가 대부분이나 배경까지 함께 찍혀 정사각형인 경우 다수<br>
 > 대회 안내와 다르게 학습데이터 3,273장이 아닌 3,272장
 
 #### 4. Images & JSON Inspection
@@ -249,6 +250,11 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - 정교한 위치 탐색: 텍스트 영역의 경계선이나 아주 작은 글자를 검출할 때 공간 정보 손실이 적어 정확도가 매우 높음
 - 다양한 스케일 대응: 병렬 구조 덕분에 이미지 내 큰 글자와 작은 글자가 섞여 있어도 특징을 효과적으로 잡아냄
 
+#### 4. ConvNeXt-Base
+- Base 모델 특유의 넓은 채널 수를 바탕으로, 복잡한 배경(영수증의 로고, 자연광 반사 등)과 실제 텍스트를 명확히 구분하는 고차원 특징 효과적으로 추출
+- 거대 커널(7x7)을 통한 문맥 파악: 일반적인 CNN보다 큰 커널 사이즈를 사용하여 수용 영역(Receptive Field)을 넓혔으며, 이는 가로로 긴 문장이나 끊겨 있는 텍스트 박스를 하나의 객체로 인식하고 연결하는 검출 성능 향상
+- 글로벌 정보 유지: ViT(Vision Transformer)의 설계를 차용한 레이어 구조 덕분에 이미지 전체의 공간적 맥락 잘 유지. 이는 텍스트가 이미지 가장자리에 치우쳐 있거나 매우 작은 크기로 산재해 있는 상황에서도 놓치지 않고 박스를 칠 수 있게 함
+
 ---
 
 ## **🕵️‍♀️ Hypothesis Testing**
@@ -261,23 +267,11 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
   <img src="./assets/compare_000494.jpg" width="45%">
 </p>
 
-#### 2.
-- **가설:** 파일명, bounding box 등을 근거로, 동일 라벨링 업체가 동일 방법으로 자동화 검출한 뒤 훈련/검증/평가 데이터로 랜덤 분류한 것으로 추정<br>
-  그러면 인간의 기준으로 훈련, 검증 데이터의 박스 오류(뒷면 글씨, 낙서, 개인정보 마스킹 일관성 없음, 배경 글자 등)는 GT에도 동일하게 적용될 것이다.
-- **결과:**
-
-#### 3. 평가 데이터에서 배경을 모두 쳐내고 영수증만 남기면 어떨까?
-- 가설 2를 근거로 배경에 있는 글자도 훈련데이터에 포함 확인. 배경은 쳐내면 안될듯
-
 #### 4. 추론 후처리
-- **가설:** V11, V12 포함 Recall이 모두 현저히 낮다. 원인을 찾으면 강건한 모델이 되지 않을까?
+- **가설:** 장시간 훈련한 V11, V12 포함 Recall이 모두 현저히 낮다. 원인을 찾으면 강건한 모델이 되지 않을까?
 - **결과:** thresh 후처리로 기존 checkpoint 이용, 추론을 재반영하자 Recall 끌어올리며 LB 퀀텀점프
 
 ![recall](./assets/recall.png)
-
-#### 6. 영수증 배경 제거
-- **가설:** test.json을 열어보면 이미지 사이즈가 기재되어 있는데 (이미지의 실제 사이즈와 동일 확인) 모두 제각각이다.<br>
-  이걸 활용할 방법이 있을까?
 
 ---
 
@@ -313,6 +307,10 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - **결과:** V11보다도 낮은 LB H-Mean
 - **원인:** train_dataloader에서 검증데이터 누수로 인한 checkpoint 선택 오염
 
+#### V14: 백본 모델 ConvNeXt-Small 변경
+- **증상:** 실행시키고 잠들었다가 6시간 후에 깨보니 H-Mean 0.0242 상태..😭
+- **조치:** Base로 모델 scale-up 후 첫 epoch 확인하니 0.98대로 정상화
+
 ---
 
 ## **📊 Experiment Logger**
@@ -329,15 +327,15 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
   </thead>
   <tbody>
     <tr>
-      <td align="center"></td>
-      <td align="center">260509</td>
-      <td>DBNet++_HRNet-W48</td>
-      <td align="center"></td>
-      <td align="center"></td>
-      <td align="center"></td>
-      <td align="center"><b>0.9849</b></td>
-      <td align="center"><b>0.9853</b></td>
-      <td align="center"><b>0.9848</b></td>
+      <td align="center">13</td>
+      <td align="center">260510</td>
+      <td>DBNet++_HRNet-W44</td>
+      <td align="center">0.9854</td>
+      <td align="center">0.9838</td>
+      <td align="center">0.9877</td>
+      <td align="center"><b>0.9891</b></td>
+      <td align="center"><b>0.9893</b></td>
+      <td align="center"><b>0.9891</b></td>
     </tr>
     <tr>
       <td align="center">12</td>
@@ -438,11 +436,16 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 
 ## **🚀 Result**
 ### Champion Model Info
-- **Version:** V11.2 (DBNet++ / HRNet-W48)
-- **Training Time:** 13h 14m
-- **Time per Epoch:** 20m 54s
-- **Selected CKPT:** Epoch 36
-- **Accuracy:** 0.9849
+- **Version:** V13 (DBNet++ / HRNet-W44)
+- **Training Time:** 12h 53m
+- **Time per Epoch:** 20m 53s
+- **Selected CKPT:** Epoch 28
+- **Accuracy:** 0.9891
+
+### Leaderboard Rank: No. 1 🏆 (Solo Entry)
+![submission](./assets/submission.png)
+![leaderboard mid](./assets/leaderboard_mid.png)
+![leaderboard final](./assets/leaderboard_final.png)
 
 ### Presentation
 - [[PDF] OCR Seminar Presentation](https://github.com/karmakaryx/ocr-receipt-text-detection/blob/main/assets/semiar_ocr.pdf)
@@ -487,8 +490,26 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - 학습 + 검증 데이터 합치기, TTA (hflip)
 - predict postprocessing
 
-#### V13:
+#### V13: epoch=28-step=47444.ckpt
 - 검증 데이터 누수로 인한 V11 rollback
 - augmentation 추가: bright & contrast
 - unclip_ratio 파라미터화
 - hyperparameter 조정
+
+#### V14:
+- 앙상블을 위해 ConvNeXt-Small 추가 실행
+- polygon을 거의 못 뽑아 ConvNeXt-Base로 파라미터 변경
+
+---
+
+## **🛠️ etc.**
+### Reference
+- [[arXiv] Real-time Scene Text Detection with Differentiable Binarization](https://arxiv.org/pdf/1911.08947.pdf)
+- [[GitHub] DBNet](https://github.com/MhLiao/DB)
+- [[arXiv] Real-Time Scene Text Detection with Differentiable Binarization and Adaptive Scale Fusion](https://arxiv.org/pdf/2202.10304.pdf)
+- [[Docs] Hydra](https://hydra.cc/docs/intro/)
+- [[Docs] PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/)
+- [[arXiv] Character-Level Evaluation for Text Detection and Recognition Tasks](https://arxiv.org/abs/2006.06244)
+- [[GitHub] CLEval](https://github.com/clovaai/CLEval)
+
+### Project Retrospective
