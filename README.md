@@ -183,7 +183,7 @@ images:
 #### 3. Qualitative Glimpse
 > 영수증은 이미지 크기도 작고 글자도 작고 많다. 이에 맞는 알고리즘과 백본 모델 검색할 것<br>
 > 영수증 자체는 세로로 긴 형태가 대부분이나 배경까지 함께 찍혀 정사각형인 경우 다수<br>
-> 대회 안내와 다르게 학습데이터 3,273장이 아닌 3,272장
+> 대회 안내와 다르게 학습 데이터 3,273장이 아닌 3,272장
 
 #### 4. Images & JSON Inspection
 > 이미지 폴더 내의 이미지 건수와 JSON 목록 건수 및 파일명 일치 여부 확인: 정상<br>
@@ -203,10 +203,10 @@ images:
 ![word_size_train](./assets/word_size_train.png)
 ![word_size_valid](./assets/word_size_valid.png)
 
-#### 7. 박스 해당 범위 (훈련 & 검증 bounding box)
+#### 7. 훈련 & 검증 GT 박스 해당 범위 (bounding box)
 > 바코드는 범위 해당없음 (바코드 숫자는 해당)<br>
 > 뒷면 글자 비침, 타 영수증 이염, 로고, 낙서, 개인정보 마스킹 등은 불규칙하게 범위 해당<br>
-> 영수증과 무관한 바깥 배경에 존재하는 글자도 박스에 포함되는 경우 존재
+> 영수증과 무관한 바깥 배경에 존재하는 글자도 GT에 포함되는 케이스 존재
 
 #### 8. 평가 영수증 시각화 (V08 실험 결과로 중간 점검)
 > 구겨진 영수증 heatmap: 100% 검출<br>
@@ -255,23 +255,71 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - 거대 커널(7x7)을 통한 문맥 파악: 일반적인 CNN보다 큰 커널 사이즈를 사용하여 수용 영역(Receptive Field)을 넓혔으며, 이는 가로로 긴 문장이나 끊겨 있는 텍스트 박스를 하나의 객체로 인식하고 연결하는 검출 성능 향상
 - 글로벌 정보 유지: ViT(Vision Transformer)의 설계를 차용한 레이어 구조 덕분에 이미지 전체의 공간적 맥락 잘 유지. 이는 텍스트가 이미지 가장자리에 치우쳐 있거나 매우 작은 크기로 산재해 있는 상황에서도 놓치지 않고 박스를 칠 수 있게 함
 
+### Model Process
+```
+python runners/train.py preset=example  # train
+python runners/test.py preset=example "checkpoint_path='{checkpoint_path}'"  # validation
+python runners/predict.py preset=example "checkpoint_path='{checkpoint_path}/epoch=##-step=####.ckpt'"  # inference
+python ocr/utils/convert_submission.py --json_path outputs/ocr_training/submissions/YYYYMMDD_HHmmss.json --output_path outputs/submission.csv  # 제출파일 생성
+```
+
 ---
 
 ## **🕵️‍♀️ Hypothesis Testing**
 #### 1. 절취선 등 기호의 박스 포함 여부
 - **가설:** 글자가 아닌 기호나 선 등은 박스에서 제외해야 하지 않을까?<br>
   최종 추론 json에서 일단 지나치게 길고 가는 선만 제거하는 후처리 로직을 적용해보았다.
-- **결과:** LB H-Mean 떡락. 영수증에 인쇄된 내용은 바코드 빼고 모두 추가되어야 한다.
+- **결과:** LB H-Mean 떡락. 영수증에 인쇄된 내용은 바코드 세로줄 빼고 모두 추가되어야 한다.
 <p align="center">
   <img src="./assets/boxes_000494.jpg" width="45%">
   <img src="./assets/compare_000494.jpg" width="45%">
 </p>
+
+#### 2. GT의 패턴 학습 위한 augmentation 강화
+- **가설:** 파일명, bounding box 등을 근거로, 동일 라벨링 업체가 동일 방법으로 자동화 검출한 뒤 훈련/검증/평가 데이터로 랜덤 분류한 것으로 추정<br>
+  그러면 인간의 기준으로 훈련, 검증 데이터의 박스 오류(뒷면 글씨, 낙서, 개인정보 마스킹 일관성 없음, 배경 글자 등)는 평가 GT에도 동일하게 적용될 것이다.<br>
+  GT = 라벨러의 일관된 패턴 (정답 ≠ 완벽한 정답)
+- **결과:** 모델이 GT 라벨 노이즈 패턴의 경향성까지 학습하도록 비침, 이염 등 반영하기 위해 augmentation 강화?
+
+#### 3. 영수증 이외 배경 포함 여부
+- **가설:** 평가 데이터에서 배경을 모두 쳐내고 영수증만 남기면 어떨까?
+- **결과:** 훈련 데이터 정답에 배경에 있는 글자도 박스 친 케이스 확인. 인간이 라벨링하지 않은 듯하니 배경도 포함되어야 한다.
 
 #### 4. 추론 후처리
 - **가설:** 장시간 훈련한 V11, V12 포함 Recall이 모두 현저히 낮다. 원인을 찾으면 강건한 모델이 되지 않을까?
 - **결과:** thresh 후처리로 기존 checkpoint 이용, 추론을 재반영하자 Recall 끌어올리며 LB 퀀텀점프
 
 ![recall](./assets/recall.png)
+
+#### 5. polygon 형태 일치 시도
+- **가설:** 훈련 데이터의 polygon은 직선에 가깝고 평가 데이터의 polygon이 좌표가 훨씬 많다. 선을 평평하게 펴보면 어떨까?
+- **결과:** CLEval은 박스 모양 자체는 보지 않으므로 polygon_unclip_ratio 1.31 → 1.4로 후처리했으나 LB H-Mean 하락
+
+#### 7. test.json의 이미지 사이즈 활용 여부
+- **가설:** 빈 test.json에 이미지 사이즈만 기재되어 있는데 (이미지의 실제 사이즈와 동일 확인) 모두 제각각이다. 이걸 활용할 방법이 있을까?<br>
+  현재는 확장한 이미지를 inverse_matrix로 원본 좌표 복원할 때 이미지를 직접 열어서 사이즈를 얻고 있다. 이미지 사이즈를 미리 알면 패딩 방향과 양을 사전에 계산 가능하고 이미지별 맞춤 후처리도 가능하다.
+- **결과:** 먼저 추론 결과에 이미지 경계 밖 좌표가 나오는 케이스는 확인, 그러나 train과 val GT의 clipping 분포 비율도 유사. 따라서 GT의 노이즈 일관성 룰에 근거하여 이미지 사이즈는 활용 불가
+```
+========================================
+📊 train GT 최종 검사 리포트
+- 검사 대상 파일 수: 3272개
+- 음수 좌표 발견: 24건
+- 이미지 크기 초과 발견: 848건
+========================================
+📊 val GT 최종 검사 리포트
+- 검사 대상 파일 수: 404개
+- 음수 좌표 발견: 3건
+- 이미지 크기 초과 발견: 94건
+========================================
+📊 test pred (V13) 최종 검사 리포트
+- 검사 대상 파일 수: 413개
+- 음수 좌표 발견: 1건
+- 이미지 크기 초과 발견: 101건
+========================================
+train: 음수 24건 / 초과 848건 (약 26%)
+val  : 음수  3건 / 초과  94건 (약 23%)
+test : 음수  1건 / 초과 101건 (약 24%)
+```
 
 ---
 
@@ -442,11 +490,6 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - **Selected CKPT:** Epoch 28
 - **Accuracy:** 0.9891
 
-### Leaderboard Rank: No. 1 🏆 (Solo Entry)
-![submission](./assets/submission.png)
-![leaderboard mid](./assets/leaderboard_mid.png)
-![leaderboard final](./assets/leaderboard_final.png)
-
 ### Presentation
 - [[PDF] OCR Seminar Presentation](https://github.com/karmakaryx/ocr-receipt-text-detection/blob/main/assets/semiar_ocr.pdf)
 
@@ -498,18 +541,4 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 
 #### V14:
 - 앙상블을 위해 ConvNeXt-Small 추가 실행
-- polygon을 거의 못 뽑아 ConvNeXt-Base로 파라미터 변경
-
----
-
-## **🛠️ etc.**
-### Reference
-- [[arXiv] Real-time Scene Text Detection with Differentiable Binarization](https://arxiv.org/pdf/1911.08947.pdf)
-- [[GitHub] DBNet](https://github.com/MhLiao/DB)
-- [[arXiv] Real-Time Scene Text Detection with Differentiable Binarization and Adaptive Scale Fusion](https://arxiv.org/pdf/2202.10304.pdf)
-- [[Docs] Hydra](https://hydra.cc/docs/intro/)
-- [[Docs] PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/)
-- [[arXiv] Character-Level Evaluation for Text Detection and Recognition Tasks](https://arxiv.org/abs/2006.06244)
-- [[GitHub] CLEval](https://github.com/clovaai/CLEval)
-
-### Project Retrospective
+- ConvNeXt-Small이 polygon을 거의 못 뽑아 ConvNeXt-Base로 파라미터 변경
