@@ -117,7 +117,7 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 │   │   │   └── utils.py                    # 지표 계산 속도 향상 및 보조 유틸리티
 │   │   ├── models/
 │   │   │   ├── decoder/
-│   │   │   │   ├── asf.py                  # Adaptive Scale Fusion (다양한 크기의 텍스트 검출 최적화)
+│   │   │   │   ├── asf.py                  # Adaptive Scale Fusion
 │   │   │   │   └── unet.py                 # 검출 성능 향상을 위한 U-Net 기반 디코더 구조
 │   │   │   ├── encoder/
 │   │   │   │   └── timm_backbone.py        # timm 라이브러리를 활용한 다양한 사전학습 백본 지원
@@ -276,8 +276,7 @@ python ocr/utils/convert_submission.py --json_path outputs/ocr_training/submissi
 </p>
 
 #### 2. GT의 패턴 학습 위한 augmentation 강화
-- **가설:** 파일명, bounding box 등을 근거로, 동일 라벨링 업체가 동일 방법으로 자동화 검출한 뒤 훈련/검증/평가 데이터로 랜덤 분류한 것으로 추정<br>
-  그러면 인간의 기준으로 훈련, 검증 데이터의 박스 오류(뒷면 글씨, 낙서, 개인정보 마스킹 일관성 없음, 배경 글자 등)는 평가 GT에도 동일하게 적용될 것이다.<br>
+- **가설:** 파일명, bounding box 등을 근거로, 동일 라벨링 업체가 동일 방법으로 자동화 검출한 뒤 훈련/검증/평가 데이터로 랜덤 분류한 것으로 추정. 그러면 인간의 기준으로 훈련, 검증 데이터의 박스 오류(뒷면 글씨, 낙서, 개인정보 마스킹 일관성 없음, 배경 글자 등)는 평가 GT에도 동일하게 적용될 것이다.<br>
   GT = 라벨러의 일관된 패턴 (정답 ≠ 완벽한 정답)
 - **결과:** 모델이 GT 라벨 노이즈 패턴의 경향성까지 학습하도록 비침, 이염 등 반영하기 위해 augmentation 강화?
 
@@ -294,6 +293,10 @@ python ocr/utils/convert_submission.py --json_path outputs/ocr_training/submissi
 #### 5. polygon 형태 일치 시도
 - **가설:** 훈련 데이터의 polygon은 직선에 가깝고 평가 데이터의 polygon이 좌표가 훨씬 많다. 선을 평평하게 펴보면 어떨까?
 - **결과:** CLEval은 박스 모양 자체는 보지 않으므로 polygon_unclip_ratio 1.31 → 1.4로 후처리했으나 LB H-Mean 하락
+
+#### 6. ?학습 정답을 보니 낙서나 개인정보 쪼가리도 모두 박스 쳐있음 그럼 HRNet보다 더 정교하게 박스치고 계열도 다른 CNN인 Convext와 앙상블을 시도해보면 어떨까
+HRNet은 고해상도 병렬 유지, ConvNeXt는 계층적 downsampling → 서로 다른 방식으로 특징 추출 → 앙상블 시 상호보완
+앙상블 방식은 prob_maps averaging (두 모델의 확률맵 평균 후 postprocess) 추천 → 단순 box NMS보다 경계 품질 좋음
 
 #### 7. test.json의 이미지 사이즈 활용 여부
 - **가설:** 빈 test.json에 이미지 사이즈만 기재되어 있는데 (이미지의 실제 사이즈와 동일 확인) 모두 제각각이다. 이걸 활용할 방법이 있을까?<br>
@@ -326,9 +329,8 @@ test : 음수  1건 / 초과 101건 (약 24%)
 ## **💡 Insights from Trial and Error**
 #### V05: 실험 실패
 - **증상:** V04 실험까지 수행한 후 기본 아키텍처를 DBNet++로 변경하는 과정에서 recall이 0이 되는 현상
-- **원인:** 원인 파악이 불가하여 베이스라인부터 코드 변경 사항을 추적해보니 V04 실험에선 문제없었던 유효 학습률이 임계값 아래로 너무 빨리 떨어져서 가중치 업데이트가 사실상 vanishing 상태였던 것으로 추정
-- **조치:** 학습률을 0.001로 원복하고 AdamW를 차후 SGD로 변경 고려
-- **교훈:** 알고리즘이나 모델 변경 같은 큰 변경사항을 먼저 수행하지 않으면 자잘한 실험은 모두 시간낭비가 된다.
+- **조치:** 원인 파악이 불가하여 베이스라인부터 코드 변경 사항을 추적해보니 V04 실험에선 문제없었던 유효 학습률이 임계값 아래로 너무 빨리 떨어져서 가중치 업데이트가 사실상 vanishing 상태였던 것으로 추정<br>
+  학습률을 0.001로 원복하고 AdamW를 차후 SGD로 변경 고려. 알고리즘이나 모델 변경 같은 큰 변경사항을 먼저 수행하지 않으면 자잘한 실험은 모두 시간낭비가 된다.
 
 #### V08: 백본 모델 HRNet-W48 변경
 - **증상:** batch_size를 계속 낮춰도 GPU OOM 발생
@@ -340,7 +342,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 
 #### V11: best epoch 갱신 정체 후 지속적인 갱신
 - **증상:** 7차 이상 epoch 갱신이 정체되어 실험을 중단하려는 때에 갑작스런 뒷심 갱신?
-- **교훈:** scheduler 이슈로 CosineAnnealingLR이 제대로 작동하지 못했었기 때문에 patience를 10회로 늘린 보람이 있나 싶었는데..ㅠ 삼진아웃은 국룰인가.
+- **결과:** scheduler 이슈로 CosineAnnealingLR이 제대로 작동하지 못했었기 때문에 patience를 10회로 늘린 보람이 있나 싶었는데..ㅠ 삼진아웃은 국룰인가.
 
 #### V12: 잦은 loss spike
 - **증상:** batch가 2로 너무 작아 gradient가 불안정하고 loss spike가 잦다.
@@ -352,12 +354,20 @@ test : 음수  1건 / 초과 101건 (약 24%)
 
 #### V12: 데이터 증강, TTA
 - **시도:** 검증데이터를 학습에 추가, TTA (hflip)
-- **결과:** V11보다도 낮은 LB H-Mean
-- **원인:** train_dataloader에서 검증데이터 누수로 인한 checkpoint 선택 오염
+- **결과:** train_dataloader에서 검증데이터 누수로 인한 checkpoint 선택 오염으로 V11보다도 낮은 LB H-Mean
+
+#### V13: box_thresh 후처리
+- **시도:** Precision을 향상시키기 위해 box_thresh 증가
+- **결과:** Precision은 0.0004 향상되었으나 Precision은 Recall과 trade-off 관계이므로 Recall이 0.001 하락, 최종 H-Mean 하락
 
 #### V14: 백본 모델 ConvNeXt-Small 변경
 - **증상:** 실행시키고 잠들었다가 6시간 후에 깨보니 H-Mean 0.0242 상태..😭
 - **조치:** Base로 모델 scale-up 후 첫 epoch 확인하니 0.98대로 정상화
+
+#### V14.5: HRNet-W44 vs ConvNeXt-Base ensemble
+- **시도:** 시도하기 전에 실수로 ConvNeXt의 best epoch를 삭제해버림..😨 무려 14h 33m 돌린건데!<br>
+  추론 JSON으로 NMS 앙상블이라도 시도해봄
+- **결과:** LB H-Mean 0.9780으로 큰 하락
 
 ---
 
@@ -374,6 +384,17 @@ test : 음수  1건 / 초과 101건 (약 24%)
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td align="center">14</td>
+      <td align="center">260512</td>
+      <td>DBNet++_ConvNeXt-Base</td>
+      <td align="center">0.9863</td>
+      <td align="center">0.9857</td>
+      <td align="center">0.9875</td>
+      <td align="center"><b>0.9875</b></td>
+      <td align="center"><b>0.9881</b></td>
+      <td align="center"><b>0.9873</b></td>
+    </tr>
     <tr>
       <td align="center">13</td>
       <td align="center">260510</td>
@@ -490,6 +511,11 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - **Selected CKPT:** Epoch 28
 - **Accuracy:** 0.9891
 
+### Leaderboard Rank: No. 1 🏆 (Solo Entry)
+![submission](./assets/submission.png)
+![leaderboard mid](./assets/leaderboard_mid.png)
+![leaderboard final](./assets/leaderboard_final.png)
+
 ### Presentation
 - [[PDF] OCR Seminar Presentation](https://github.com/karmakaryx/ocr-receipt-text-detection/blob/main/assets/semiar_ocr.pdf)
 
@@ -539,6 +565,23 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - unclip_ratio 파라미터화
 - hyperparameter 조정
 
-#### V14:
+#### V14: epoch=15-step=26176.ckpt
 - 앙상블을 위해 ConvNeXt-Small 추가 실행
 - ConvNeXt-Small이 polygon을 거의 못 뽑아 ConvNeXt-Base로 파라미터 변경
+- HRNet-W44 vs ConvNeXt-Base NMS ensemble
+
+---
+
+## **🛠️ etc.**
+### Reference
+- [[arXiv] Real-time Scene Text Detection with Differentiable Binarization](https://arxiv.org/pdf/1911.08947.pdf)
+- [[GitHub] DBNet](https://github.com/MhLiao/DB)
+- [[arXiv] Real-Time Scene Text Detection with Differentiable Binarization and Adaptive Scale Fusion](https://arxiv.org/pdf/2202.10304.pdf)
+- [[Docs] Hydra](https://hydra.cc/docs/intro/)
+- [[Docs] PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/)
+- [[arXiv] Character-Level Evaluation for Text Detection and Recognition Tasks](https://arxiv.org/abs/2006.06244)
+- [[GitHub] CLEval](https://github.com/clovaai/CLEval)
+
+### Project Retrospective
+
+<br>
