@@ -139,11 +139,16 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 │   │   │   ├── checkpoints/...             # 학습된 모델 가중치(.ckpt) 저장
 │   │   │   ├── logs/...                    # 학습 과정 모니터링 로그
 │   │   │   └── submissions/...             # 추론 JSON (CSV 변환 전)
+│   │   ├── prob_maps/                      # 모델별 예측 확률값(.npy) 저장
+│   │   │   ├── convnext/...
+│   │   │   └── hrnet/...
 │   │   └── submission.csv                  # 추론 후 제출할 파일 생성
 │   ├── runners/
 │   │   ├── predict.py                      # 추론 실행파일
 │   │   ├── test.py                         # 검증 실행파일
-│   │   └── train.py                        # 학습 실행파일
+│   │   ├── train.py                        # 학습 실행파일
+│   │   ├── save_prob_maps.py               # 단일 모델 실행 후 확률 맵을 npy로 추출
+│   │   └── ensemble_prob_maps.py           # 최종 앙상블 결과 도출
 │   ├── wandb/...                           # W&B log (GitHub 관리안함)
 │   ├── baseline.ipynb                      # baseline guide (GitHub 관리안함)
 │   └── eda.ipynb                           # EDA Notebook
@@ -203,7 +208,7 @@ images:
 ![word_size_train](./assets/word_size_train.png)
 ![word_size_valid](./assets/word_size_valid.png)
 
-#### 7. 훈련 & 검증 GT 박스 해당 범위 (bounding box)
+#### 7. 학습 & 검증 GT 박스 해당 범위 (bounding box)
 > 바코드는 범위 해당없음 (바코드 숫자는 해당)<br>
 > 뒷면 글자 비침, 타 영수증 이염, 로고, 낙서, 개인정보 마스킹 등은 불규칙하게 범위 해당<br>
 > 영수증과 무관한 바깥 배경에 존재하는 글자도 GT에 포함되는 케이스 존재
@@ -217,7 +222,7 @@ images:
 </p>
 
 #### 9. polygon 형태 비교
-> 훈련/검증 데이터: 선은 직선에 가깝고 모서리는 사각형에 가깝다.<br>
+> 학습/검증 데이터: 선은 직선에 가깝고 모서리는 사각형에 가깝다.<br>
 > 평가 데이터: 선이 자글자글하고 모서리가 둥글다.
 
 ---
@@ -255,12 +260,19 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - 거대 커널(7x7)을 통한 문맥 파악: 일반적인 CNN보다 큰 커널 사이즈를 사용하여 수용 영역(Receptive Field)을 넓혔으며, 이는 가로로 긴 문장이나 끊겨 있는 텍스트 박스를 하나의 객체로 인식하고 연결하는 검출 성능 향상
 - 글로벌 정보 유지: ViT(Vision Transformer)의 설계를 차용한 레이어 구조 덕분에 이미지 전체의 공간적 맥락 잘 유지. 이는 텍스트가 이미지 가장자리에 치우쳐 있거나 매우 작은 크기로 산재해 있는 상황에서도 놓치지 않고 박스를 칠 수 있게 함
 
+#### 5. HRnet vs ConvNeXt ensemble
+- HRNet은 고해상도 병렬 유지, ConvNeXt는 계층적 downsampling이라 서로 다른 방식으로 특징 추출
+- prob_maps averaging (두 모델의 확률맵 평균 후 postprocess): 단순 box NMS보다 경계 품질 좋음
+
 ### Model Process
 ```
 python runners/train.py preset=example  # train
 python runners/test.py preset=example "checkpoint_path='{checkpoint_path}'"  # validation
 python runners/predict.py preset=example "checkpoint_path='{checkpoint_path}/epoch=##-step=####.ckpt'"  # inference
 python ocr/utils/convert_submission.py --json_path outputs/ocr_training/submissions/YYYYMMDD_HHmmss.json --output_path outputs/submission.csv  # 제출파일 생성
+
+python runners/save_prob_maps.py preset=example_hrnet "checkpoint_path='{checkpoint_path}/epoch=##-step=####.ckpt'" "+prob_maps_dir='outputs/prob_maps/hrnet'"  # HRNet
+python runners/save_prob_maps.py preset=example "checkpoint_path='{checkpoint_path}/epoch=##-step=####.ckpt'" "+prob_maps_dir='outputs/prob_maps/convnext'"  # ConvNeXt
 ```
 
 ---
@@ -276,27 +288,27 @@ python ocr/utils/convert_submission.py --json_path outputs/ocr_training/submissi
 </p>
 
 #### 2. GT의 패턴 학습 위한 augmentation 강화
-- **가설:** 파일명, bounding box 등을 근거로, 동일 라벨링 업체가 동일 방법으로 자동화 검출한 뒤 훈련/검증/평가 데이터로 랜덤 분류한 것으로 추정. 그러면 인간의 기준으로 훈련, 검증 데이터의 박스 오류(뒷면 글씨, 낙서, 개인정보 마스킹 일관성 없음, 배경 글자 등)는 평가 GT에도 동일하게 적용될 것이다.<br>
+- **가설:** 파일명, bounding box 등을 근거로, 동일 라벨링 업체가 동일 방법으로 자동화 검출한 뒤 학습/검증/평가 데이터로 랜덤 분류한 것으로 추정. 그러면 인간의 기준으로 학습/검증 데이터의 박스 오류(뒷면 글씨, 낙서, 개인정보 마스킹 일관성 없음, 배경 글자 등)는 평가 GT에도 동일하게 적용될 것이다.<br>
   GT = 라벨러의 일관된 패턴 (정답 ≠ 완벽한 정답)
 - **결과:** 모델이 GT 라벨 노이즈 패턴의 경향성까지 학습하도록 비침, 이염 등 반영하기 위해 augmentation 강화?
 
 #### 3. 영수증 이외 배경 포함 여부
 - **가설:** 평가 데이터에서 배경을 모두 쳐내고 영수증만 남기면 어떨까?
-- **결과:** 훈련 데이터 정답에 배경에 있는 글자도 박스 친 케이스 확인. 인간이 라벨링하지 않은 듯하니 배경도 포함되어야 한다.
+- **결과:** 학습 데이터 정답에 배경에 있는 글자도 박스 친 케이스 확인. 인간이 라벨링하지 않은 듯하니 배경도 포함되어야 한다.
 
 #### 4. 추론 후처리
-- **가설:** 장시간 훈련한 V11, V12 포함 Recall이 모두 현저히 낮다. 원인을 찾으면 강건한 모델이 되지 않을까?
+- **가설:** 장시간 학습한 V11, V12 포함 Recall이 모두 현저히 낮다. 원인을 찾으면 강건한 모델이 되지 않을까?
 - **결과:** thresh 후처리로 기존 checkpoint 이용, 추론을 재반영하자 Recall 끌어올리며 LB 퀀텀점프
 
 ![recall](./assets/recall.png)
 
 #### 5. polygon 형태 일치 시도
-- **가설:** 훈련 데이터의 polygon은 직선에 가깝고 평가 데이터의 polygon이 좌표가 훨씬 많다. 선을 평평하게 펴보면 어떨까?
+- **가설:** 학습 데이터의 polygon은 직선에 가깝고 평가 데이터의 polygon이 좌표가 훨씬 많다. 선을 평평하게 펴보면 어떨까?
 - **결과:** CLEval은 박스 모양 자체는 보지 않으므로 polygon_unclip_ratio 1.31 → 1.4로 후처리했으나 LB H-Mean 하락
 
-#### 6. ?학습 정답을 보니 낙서나 개인정보 쪼가리도 모두 박스 쳐있음 그럼 HRNet보다 더 정교하게 박스치고 계열도 다른 CNN인 Convext와 앙상블을 시도해보면 어떨까
-HRNet은 고해상도 병렬 유지, ConvNeXt는 계층적 downsampling → 서로 다른 방식으로 특징 추출 → 앙상블 시 상호보완
-앙상블 방식은 prob_maps averaging (두 모델의 확률맵 평균 후 postprocess) 추천 → 단순 box NMS보다 경계 품질 좋음
+#### 6. HRnet vs ConvNeXt ensemble
+- **가설:** 학습 데이터 정답에 낙서나 개인정보 마스킹 덜 된 쪼가리도 박스 친 케이스 확인. 그럼 HRNet보다 더 정교하게 박스치고 CNN인 ConvNeXt와 앙상블을 시도해보면 어떨까?
+- **결과:** Recall이 높은 ConvNeXt를 weighted average ensemble하여 LB H-Mean 최고점 갱신 (Recall에서 마의 0.99대 뚫음)
 
 #### 7. test.json의 이미지 사이즈 활용 여부
 - **가설:** 빈 test.json에 이미지 사이즈만 기재되어 있는데 (이미지의 실제 사이즈와 동일 확인) 모두 제각각이다. 이걸 활용할 방법이 있을까?<br>
@@ -332,7 +344,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
   원인 파악이 불가하여 베이스라인부터 코드 변경 사항을 추적해보니 V04 실험에선 문제없었던 유효 학습률이 임계값 아래로 너무 빨리 떨어져서 가중치 업데이트가 사실상 vanishing 상태였던 것으로 추정<br>
 - **조치:** 학습률을 0.001로 원복하고 AdamW를 차후 SGD로 변경 고려. 알고리즘이나 모델 변경 같은 큰 변경사항을 먼저 수행하지 않으면 자잘한 실험은 모두 시간낭비가 된다.
 
-#### V08: 백본 모델 HRNet-W48 변경
+#### V08: 백본 모델 HRNet-W48로 변경
 - **증상:** batch_size를 계속 낮춰도 GPU OOM 발생
 - **조치:** batch_size를 2까지 낮춤
 
@@ -360,14 +372,23 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - **시도:** Precision을 향상시키기 위해 box_thresh 증가
 - **결과:** Precision은 0.0004 향상되었으나 Precision은 Recall과 trade-off 관계이므로 Recall이 0.001 하락, 최종 H-Mean 하락
 
-#### V14: 백본 모델 ConvNeXt-Small 변경
-- **증상:** 실행시키고 잠들었다가 6시간 후에 깨보니 H-Mean 0.0242 상태..😭
+#### V14: 백본 모델 ConvNeXt-Base로 변경
+- **증상:** ConvNeXt-Small 실행시키고 잠들었다가 6시간 후에 깨보니 H-Mean 0.0242 상태..😭
 - **조치:** Base로 모델 scale-up 후 첫 epoch 확인하니 0.98대로 정상화
 
 #### V14.5: HRNet-W44 vs ConvNeXt-Base ensemble
-- **시도:** 시도하기 전에 실수로 ConvNeXt의 best epoch를 삭제해버림..😨 무려 14h 33m 돌린건데!<br>
+- **시도:** 앙상블 시도하기 전에 실수로 ConvNeXt의 best epoch를 삭제해버림..😨 무려 14h 33m 돌린건데!<br>
   추론 JSON으로 NMS 앙상블이라도 시도해봄
 - **결과:** LB H-Mean 0.9780으로 큰 하락
+
+#### V15: ConvNeXt-Base resume
+- **시도:** 삭제 후 남아있던 top3의 마지막인 epoch 11부터 resume. top-3 epoch 15, 18, 21 생성
+- **결과:** 놀리는 제출 횟수가 아까워서 top-3 checkpoint 모두 시도해봤는데 의미없다..<br>
+  ConvNeXt-Base 단독으로는 무리 (H-Mean 0.9868이 최고점)
+
+#### V17: postprocessing hyperparameter tuning
+- **시도:** Recall이 0.9902를 기록한 V16.3(H-Mean 0.9894)의 경우 Precision이 0.9889로 많이 낮아 V13 후처리와 유사한 시도 재도전
+- **결과:** thresh 0.12, box_thresh 0.42, polygon_unclip_ratio 1.35 모두 실패하며 파라미터 튜닝은 한계에 도달함 확인
 
 ---
 
@@ -386,9 +407,20 @@ test : 음수  1건 / 초과 101건 (약 24%)
   </thead>
   <tbody>
     <tr>
+      <td align="center">16</td>
+      <td align="center">260513</td>
+      <td>ensemble</td>
+      <td align="center"></td>
+      <td align="center"></td>
+      <td align="center"></td>
+      <td align="center"><b>0.9894</b></td>
+      <td align="center"><b>0.9889</b></td>
+      <td align="center"><b>0.9902</b></td>
+    </tr>
+    <tr>
       <td align="center">14</td>
       <td align="center">260512</td>
-      <td>DBNet++_ConvNeXt-Base</td>
+      <td>DBNet++_ConvNeXt</td>
       <td align="center">0.9863</td>
       <td align="center">0.9857</td>
       <td align="center">0.9875</td>
@@ -506,11 +538,16 @@ test : 음수  1건 / 초과 101건 (약 24%)
 
 ## **🚀 Result**
 ### Champion Model Info
-- **Version:** V13 (DBNet++ / HRNet-W44)
+- **Version:** V16 (ensemble), V13 (DBNet++ / HRNet-W44)
 - **Training Time:** 12h 53m
 - **Time per Epoch:** 20m 53s
 - **Selected CKPT:** Epoch 28
-- **Accuracy:** 0.9891
+- **Accuracy:** 0.9894, 0.9891
+
+### Leaderboard Rank: No. 1 🏆 (Solo Entry)
+![submission](./assets/submission.png)
+![leaderboard mid](./assets/leaderboard_mid.png)
+![leaderboard final](./assets/leaderboard_final.png)
 
 ### Presentation
 - [[PDF] OCR Seminar Presentation](https://github.com/karmakaryx/ocr-receipt-text-detection/blob/main/assets/semiar_ocr.pdf)
@@ -565,6 +602,11 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - 앙상블을 위해 ConvNeXt-Small 추가 실행
 - ConvNeXt-Small이 polygon을 거의 못 뽑아 ConvNeXt-Base로 파라미터 변경
 - HRNet-W44 vs ConvNeXt-Base NMS ensemble
+- epoch 15 삭제 실수로 epoch 11에서 resume 학습
+
+#### V16: epoch=21-step=35992.ckpt
+- prob_maps averaging ensemble
+- postprocessing hyperparameter tuning
 
 ---
 
@@ -579,3 +621,5 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - [[GitHub] CLEval](https://github.com/clovaai/CLEval)
 
 ### Project Retrospective
+
+<br>
