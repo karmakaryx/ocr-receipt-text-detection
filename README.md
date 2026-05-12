@@ -328,9 +328,9 @@ test : 음수  1건 / 초과 101건 (약 24%)
 
 ## **💡 Insights from Trial and Error**
 #### V05: 실험 실패
-- **증상:** V04 실험까지 수행한 후 기본 아키텍처를 DBNet++로 변경하는 과정에서 recall이 0이 되는 현상
-- **조치:** 원인 파악이 불가하여 베이스라인부터 코드 변경 사항을 추적해보니 V04 실험에선 문제없었던 유효 학습률이 임계값 아래로 너무 빨리 떨어져서 가중치 업데이트가 사실상 vanishing 상태였던 것으로 추정<br>
-  학습률을 0.001로 원복하고 AdamW를 차후 SGD로 변경 고려. 알고리즘이나 모델 변경 같은 큰 변경사항을 먼저 수행하지 않으면 자잘한 실험은 모두 시간낭비가 된다.
+- **증상:** V04 실험까지 수행한 후 기본 아키텍처를 DBNet++로 변경하는 과정에서 recall이 0이 되는 현상<br>
+  원인 파악이 불가하여 베이스라인부터 코드 변경 사항을 추적해보니 V04 실험에선 문제없었던 유효 학습률이 임계값 아래로 너무 빨리 떨어져서 가중치 업데이트가 사실상 vanishing 상태였던 것으로 추정<br>
+- **조치:** 학습률을 0.001로 원복하고 AdamW를 차후 SGD로 변경 고려. 알고리즘이나 모델 변경 같은 큰 변경사항을 먼저 수행하지 않으면 자잘한 실험은 모두 시간낭비가 된다.
 
 #### V08: 백본 모델 HRNet-W48 변경
 - **증상:** batch_size를 계속 낮춰도 GPU OOM 발생
@@ -372,6 +372,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 ---
 
 ## **📊 Experiment Logger**
+> **H: H-Mean, P: Precision, R: Recall**<br>
 > 실험기록이 많으므로 주요 변화 건만 기재
 <table>
   <thead>
@@ -379,8 +380,8 @@ test : 음수  1건 / 초과 101건 (약 24%)
       <th align="center">NO.</th>
       <th align="center">DATE</th>
       <th align="center">MODEL</th>
-      <th align="center" colspan="3">H-Mean/Precision/Recall (CV)</th>
-      <th align="center" colspan="3">H-Mean/Precision/Recall (LB)</th>
+      <th align="center" colspan="3">H | P | R (CV)</th>
+      <th align="center" colspan="3">H | P | R (LB)</th>
     </tr>
   </thead>
   <tbody>
@@ -511,11 +512,6 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - **Selected CKPT:** Epoch 28
 - **Accuracy:** 0.9891
 
-### Leaderboard Rank: No. 1 🏆 (Solo Entry)
-![submission](./assets/submission.png)
-![leaderboard mid](./assets/leaderboard_mid.png)
-![leaderboard final](./assets/leaderboard_final.png)
-
 ### Presentation
 - [[PDF] OCR Seminar Presentation](https://github.com/karmakaryx/ocr-receipt-text-detection/blob/main/assets/semiar_ocr.pdf)
 
@@ -583,5 +579,3 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - [[GitHub] CLEval](https://github.com/clovaai/CLEval)
 
 ### Project Retrospective
-
-<br>
