@@ -267,7 +267,7 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 - HRNet은 고해상도 병렬 유지, ConvNeXt는 계층적 downsampling이라 서로 다른 방식으로 특징 추출
 - prob_maps averaging (두 모델의 확률맵 평균 후 postprocess): 단순 box NMS보다 경계 품질 좋음
 
-### Model Process
+### Modeling Process
 ```
 python runners/train.py preset=example  # train
 python runners/test.py preset=example "checkpoint_path='{checkpoint_path}'"  # validation
@@ -281,7 +281,11 @@ python runners/save_prob_maps.py preset=example_convnext "checkpoint_path='{chec
 ---
 
 ## **🕵️‍♀️ Hypothesis Testing**
-#### 1. 절취선 등 기호의 박스 포함 여부
+#### 1.유효하지 않은 박스에 대한 전처리 여부
+- **가설:** EDA에서 min: 0.0으로 표시된 아주 작은 박스에 대해 전처리가 필요할까?
+- **결과:** 코드상에서 2단계 필터링됨 (학습시 점 3개 미만 skip, 추론시 sside < 3이면 필터링)
+
+#### 2. 절취선 등 기호의 박스 포함 여부
 - **가설:** 글자가 아닌 기호나 선 등은 박스에서 제외해야 하지 않을까?<br>
   최종 추론 json에서 일단 지나치게 길고 가는 선만 제거하는 후처리 로직을 적용해보았다.
 - **결과:** LB H-Mean 떡락. 영수증에 인쇄된 내용은 바코드 세로줄 빼고 모두 추가되어야 한다.
@@ -290,30 +294,30 @@ python runners/save_prob_maps.py preset=example_convnext "checkpoint_path='{chec
   <img src="./assets/compare_000494.jpg" width="45%">
 </p>
 
-#### 2. GT의 패턴 학습 위한 augmentation 강화
+#### 3. GT의 패턴 학습 위한 augmentation 강화
 - **가설:** 파일명, bounding box 등을 근거로, 동일 라벨링 업체가 동일 방법으로 자동화 검출한 뒤 학습/검증/평가 데이터로 랜덤 분류한 것으로 추정. 그러면 인간의 기준으로 학습/검증 데이터의 박스 오류(뒷면 글씨, 낙서, 개인정보 마스킹 일관성 없음, 배경 글자 등)는 평가 GT에도 동일하게 적용될 것이다.<br>
   GT = 라벨러의 일관된 패턴 (정답 ≠ 완벽한 정답)
-- **결과:** 모델이 GT 라벨 노이즈 패턴의 경향성까지 학습하도록 비침, 이염 등 반영하기 위해 augmentation 강화?
+- **결과:** 모델이 GT 라벨 노이즈 패턴의 경향성까지 학습하도록 비침, 이염 등 반영하기 위해 augmentation 하려면 다른 영수증 이미지를 overlay 해야 한다.
 
-#### 3. 영수증 이외 배경 포함 여부
+#### 4. 영수증 이외 배경 포함 여부
 - **가설:** 평가 데이터에서 배경을 모두 쳐내고 영수증만 남기면 어떨까?
 - **결과:** 학습 데이터 정답에 배경에 있는 글자도 박스 친 케이스 확인. 인간이 라벨링하지 않은 듯하니 배경도 포함되어야 한다.
 
-#### 4. 추론 후처리
+#### 5. 추론 후처리
 - **가설:** 장시간 학습한 V11, V12 포함 Recall이 모두 현저히 낮다. 원인을 찾으면 강건한 모델이 되지 않을까?
 - **결과:** thresh 후처리로 기존 checkpoint 이용, 추론을 재반영하자 Recall 끌어올리며 LB 퀀텀점프
 
 ![recall](./assets/recall.png)
 
-#### 5. polygon 형태 일치 시도
+#### 6. polygon 형태 일치 시도
 - **가설:** 학습 데이터의 polygon은 직선에 가깝고 평가 데이터의 polygon이 좌표가 훨씬 많다. 선을 평평하게 펴보면 어떨까?
 - **결과:** CLEval은 박스 모양 자체는 보지 않으므로 polygon_unclip_ratio 1.31 → 1.4로 후처리했으나 LB H-Mean 하락
 
-#### 6. HRnet vs ConvNeXt ensemble
+#### 7. HRnet vs ConvNeXt ensemble
 - **가설:** 학습 데이터 정답에 낙서나 개인정보 마스킹 덜 된 쪼가리도 박스 친 케이스 확인. 그럼 HRNet보다 더 정교하게 박스치고 CNN인 ConvNeXt와 앙상블을 시도해보면 어떨까?
 - **결과:** Recall이 높은 ConvNeXt를 weighted average ensemble하여 LB H-Mean 최고점 갱신 (Recall에서 마의 0.99대 뚫음)
 
-#### 7. test.json의 이미지 사이즈 활용 여부
+#### 8. test.json의 이미지 사이즈 활용 여부
 - **가설:** 빈 test.json에 이미지 사이즈만 기재되어 있는데 (이미지의 실제 사이즈와 동일 확인) 모두 제각각이다. 이걸 활용할 방법이 있을까?<br>
   현재는 확장한 이미지를 inverse_matrix로 원본 좌표 복원할 때 이미지를 직접 열어서 사이즈를 얻고 있다. 이미지 사이즈를 미리 알면 패딩 방향과 양을 사전에 계산 가능하고 이미지별 맞춤 후처리도 가능하다.
 - **결과:** 먼저 추론 결과에 이미지 경계 밖 좌표가 나오는 케이스는 확인, 그러나 train과 val GT의 clipping 분포 비율도 유사. 따라서 GT의 노이즈 일관성 룰에 근거하여 이미지 사이즈는 활용 불가
@@ -623,7 +627,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - postprocessing hyperparameter tuning
 
 #### V18: ensemble + TTA
-- ensemble + TTA (hflip) 재시도
+- ensemble + TTA (hflip) 재시도 후 LB H-Mean 최고점 갱신
 - HRNet-W44 단독 TTA은 ensemble보다 효과 낮음
 
 ---
