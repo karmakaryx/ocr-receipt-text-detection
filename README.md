@@ -141,13 +141,16 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 │   │   │   └── submissions/...             # 추론 JSON (CSV 변환 전)
 │   │   ├── prob_maps/                      # 모델별 예측 확률값(.npy) 저장
 │   │   │   ├── convnext/...
-│   │   │   └── hrnet/...
+│   │   │   ├── convnext_tta/...
+│   │   │   ├── hrnet/...
+│   │   │   └── hrnet_tta/...
 │   │   └── submission.csv                  # 추론 후 제출할 파일 생성
 │   ├── runners/
 │   │   ├── predict.py                      # 추론 실행파일
 │   │   ├── test.py                         # 검증 실행파일
 │   │   ├── train.py                        # 학습 실행파일
 │   │   ├── save_prob_maps.py               # 단일 모델 실행 후 확률 맵을 npy로 추출
+│   │   ├── save_prob_maps_tta.py           # 추론 TTA (앙상블 포함)
 │   │   └── ensemble_prob_maps.py           # 최종 앙상블 결과 도출
 │   ├── wandb/...                           # W&B log (GitHub 관리안함)
 │   ├── baseline.ipynb                      # baseline guide (GitHub 관리안함)
@@ -271,8 +274,8 @@ python runners/test.py preset=example "checkpoint_path='{checkpoint_path}'"  # v
 python runners/predict.py preset=example "checkpoint_path='{checkpoint_path}/epoch=##-step=####.ckpt'"  # inference
 python ocr/utils/convert_submission.py --json_path outputs/ocr_training/submissions/YYYYMMDD_HHmmss.json --output_path outputs/submission.csv  # 제출파일 생성
 
-python runners/save_prob_maps.py preset=example_hrnet "checkpoint_path='{checkpoint_path}/epoch=##-step=####.ckpt'" "+prob_maps_dir='outputs/prob_maps/hrnet'"  # HRNet
-python runners/save_prob_maps.py preset=example "checkpoint_path='{checkpoint_path}/epoch=##-step=####.ckpt'" "+prob_maps_dir='outputs/prob_maps/convnext'"  # ConvNeXt
+python runners/save_prob_maps.py preset=example "checkpoint_path='{checkpoint_path}/epoch=##-step=####.ckpt'" "+prob_maps_dir='outputs/prob_maps/hrnet'"  # HRNet
+python runners/save_prob_maps.py preset=example_convnext "checkpoint_path='{checkpoint_path}/epoch=##-step=####.ckpt'" "+prob_maps_dir='outputs/prob_maps/convnext'"  # ConvNeXt
 ```
 
 ---
@@ -407,6 +410,17 @@ test : 음수  1건 / 초과 101건 (약 24%)
   </thead>
   <tbody>
     <tr>
+      <td align="center">18</td>
+      <td align="center">260513</td>
+      <td>ensemble+TTA</td>
+      <td align="center"></td>
+      <td align="center"></td>
+      <td align="center"></td>
+      <td align="center"><b>0.9896</b></td>
+      <td align="center"><b>0.9894</b></td>
+      <td align="center"><b>0.9899</b></td>
+    </tr>
+    <tr>
       <td align="center">16</td>
       <td align="center">260513</td>
       <td>ensemble</td>
@@ -538,11 +552,11 @@ test : 음수  1건 / 초과 101건 (약 24%)
 
 ## **🚀 Result**
 ### Champion Model Info
-- **Version:** V16 (ensemble), V13 (DBNet++ / HRNet-W44)
+- **Version:** V18 (ensemble+TTA), V13 (DBNet++ / HRNet-W44)
 - **Training Time:** 12h 53m
 - **Time per Epoch:** 20m 53s
 - **Selected CKPT:** Epoch 28
-- **Accuracy:** 0.9894, 0.9891
+- **Accuracy:** 0.9896, 0.9891
 
 ### Leaderboard Rank: No. 1 🏆 (Solo Entry)
 ![submission](./assets/submission.png)
@@ -608,6 +622,10 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - prob_maps averaging ensemble
 - postprocessing hyperparameter tuning
 
+#### V18: ensemble + TTA
+- ensemble + TTA (hflip) 재시도
+- HRNet-W44 단독 TTA은 ensemble보다 효과 낮음
+
 ---
 
 ## **🛠️ etc.**
@@ -621,5 +639,8 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - [[GitHub] CLEval](https://github.com/clovaai/CLEval)
 
 ### Project Retrospective
+기존 대회들에선 리더보드 점수 올리기에만 매몰되어 실험기록을 W&B에만 주로 맡기는 바람에 산출물 작성시에 (정신도 몽롱한 상태에서) 애로사항이 많았습니다.<br>
+따라서 이번 대회는 LB 점수 지상주의 습관을 지양하고 과정을 더 중요시하기 위해 실험을 서두르지 않았습니다. 순간적인 아이디어가 떠오른다고 일단 코드부터 우당탕탕 고치려는 손가락을 뿌리치며 가설을 정리하고 꼼꼼히 코드 변경사항들을 기록하고 점수 변화의 요인 추적에 더 집중했습니다. (이를 위해 직접 개발한 실험 관리 도구인 KattPaw를 활용, 버전별로 코드 변경 사항만 따로 확인해서 내용을 정리했고 실험 실패시 복원도 쉬워서 뿌듯했습니다. 다만 이번 대회처럼 복잡한 디렉토리 구조에서는 한계점을 느끼며 앱 수정 아이디어도 많이 얻었습니다.)<br>
+같은 CV 계열인 문서 분류 대회의 우승 경험이 큰 도움이 되었습니다. 이미 체크포인트로 숱한 삽질했던 고인물이라 기존 대회 중 가장 복잡한 구조였음에도 쉽게 적응이 가능했고 그 때 좋은 결과를 얻었던 실험들과 사용 모델들을 참고하여 새로운 기법들을 추가한 결과, CV 대회 2관왕을 달성할 수 있었습니다! (근데 이번엔 참여자가 몇 명이죠? ...😅)
 
 <br>
