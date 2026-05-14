@@ -225,14 +225,19 @@ images:
   <img src="./assets/boxes_002971.jpg" width="45%">
 </p>
 
-#### 9. polygon 형태 비교 (V08 실험 결과로 중간 점검)
+#### 9. Polygon 형태 비교 (V08 실험 결과로 중간 점검)
 > 학습/검증 데이터: 선은 직선에 가깝고 모서리는 사각형에 가깝다.<br>
 > 평가 데이터: 선이 자글자글하고 모서리가 둥글다.
 
-#### 10. 검증 GT 시각화 비교 (최종 추론 모델 사용)
+#### 10. Miss Rate & Accuracy (앙상블 전 최종 추론 모델 사용)
+> 검증 GT와 최종 추론 모델 사이의 miss rate 4.2%
+![miss_rate](./assets/miss_rate.png)
+
+#### 11. 검증 GT 시각화 비교 (앙상블 전 최종 추론 모델 사용)
 > 검증 GT는 json 생성이 되지 않으므로 ocr_utils.py를 활용, 신규 코드 작성<br>
-> HRNet, ConvNeXt 추론 모델 모두 GT의 랜덤 뒷면 글자 비침이나 노이즈 등에 대한 거대 박스를 못 잡고 있다. (GT: red)<br>
-> 역설적으로 GT에 사용된 모델보다 내 모델이 더 좋은거 같은데? 🤔
+> HRNet, ConvNeXt 추론 모델 모두 GT의 ghost text나 노이즈 등에 대한 거대 박스를 못 잡고 있다. (GT: red)<br>
+> 역설적으로 GT에 사용된 모델보다 내가 깎은 모델이 더 좋은거 같은데? 🤔<br>
+> 심지어 이거 LB 영끌하느라 억지로 노이즈 과적합시킨 상태임을 고려하면 실물 영수증 99.9% 탐지도 가능할지도!
 <p align="center">
   <img src="./assets/gt_000030.jpg" width="45%">
   <img src="./assets/gt_000208.jpg" width="45%">
@@ -392,9 +397,9 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - **증상:** ConvNeXt-Small 실행시키고 잠들었다가 6시간 후에 깨보니 H-Mean 0.0242 상태..😭
 - **조치:** Base로 모델 scale-up 후 첫 epoch 확인하니 0.98대로 정상화
 
-#### V14.5: HRNet-W44 vs ConvNeXt-Base ensemble
+#### V14: HRNet-W44 vs ConvNeXt-Base ensemble
 - **시도:** 앙상블 시도하기 전에 실수로 ConvNeXt의 best epoch를 삭제해버림..😨 무려 14h 33m 돌린건데!<br>
-  추론 JSON으로 NMS 앙상블이라도 시도해봄
+  추론 JSON으로 NMS 앙상블이라도 시도
 - **결과:** LB H-Mean 0.9780으로 큰 하락
 
 #### V15: ConvNeXt-Base resume
@@ -404,12 +409,13 @@ test : 음수  1건 / 초과 101건 (약 24%)
 
 #### V17: postprocessing hyperparameter tuning
 - **시도:** Recall이 0.9902를 기록한 V16.3(H-Mean 0.9894)의 경우 Precision이 0.9889로 많이 낮아 V13 후처리와 유사한 시도 재도전
-- **결과:** thresh 0.12, box_thresh 0.42, polygon_unclip_ratio 1.35 모두 실패하며 파라미터 튜닝은 한계에 도달함 확인
+- **결과:** thresh 0.12, box_thresh 0.42, polygon_unclip_ratio 1.35 모두 갱신 실패하며 파라미터 튜닝은 한계에 도달함 확인
 
 #### V20: TTA: brightness/contrast, multi-scale
-- **시도:** 최종 추론 모델을 사용하여 검증 GT를 시각화하여 비교하고, missing rate를 통계낸 결과 전체 평균 4.2%<br>
+- **시도:** 최종 추론 모델을 사용하여 검증 GT를 시각화하여 비교하고, box miss rate를 통계낸 결과 전체 평균 4.2%<br>
   private shakeup 우려되나 최종 모델인 관계로 재학습 시간은 부족, 더 많은 GT 영역을 잡아낼 TTA 시도
-- **결과:** brightness/contrast, multi-scale (1280+1600) 모두 실패
+- **결과:** brightness/contrast, multi-scale (1280+1600) 등등 모두 LB 변화없거나 H-Mean 하락<br>
+  GT 자체의 노이즈 편향이 커서 수치적 갱신보다는 모델의 강건성을 유지하는 방향으로 최종 결정
 
 ---
 
@@ -575,7 +581,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 <br>
 
 ![wandb_01](./assets/wandb_01.png)
-<br>
+![wandb_02](./assets/wandb_02.png)
 
 ---
 
@@ -585,9 +591,10 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - **Training Time:** 12h 53m
 - **Time per Epoch:** 20m 53s
 - **Selected CKPT:** Epoch 28
-- **Accuracy:** 0.9897, 0.9891
+- **Accuracy (Public):** 0.9897, 0.9891
+- **Accuracy (Private):** 0.9861 (unselected)
 
-### Leaderboard Rank: No. 1 🏆 (Solo Entry)
+### Leaderboard Rank: No. 1 (Solo Entry) 🏆 (mid H-Mean: 0.9897 / final H-Mean: 0.9857)
 ![submission](./assets/submission.png)
 ![leaderboard mid](./assets/leaderboard_mid.png)
 ![leaderboard final](./assets/leaderboard_final.png)
