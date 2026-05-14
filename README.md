@@ -237,7 +237,7 @@ images:
 > 검증 GT는 json 생성이 되지 않으므로 ocr_utils.py를 활용, 신규 코드 작성<br>
 > HRNet, ConvNeXt 추론 모델 모두 GT의 ghost text나 노이즈 등에 대한 거대 박스를 못 잡고 있다. (GT: red)<br>
 > 역설적으로 GT에 사용된 모델보다 내가 깎은 모델이 더 좋은거 같은데? 🤔<br>
-> 심지어 이거 LB 영끌하느라 억지로 노이즈 과적합시킨 상태임을 고려하면 실물 영수증 99.9% 탐지도 가능할지도!
+> 심지어 LB 영끌하느라 억지로 노이즈 과적합시킨 상태임을 고려하면 실물 영수증 99.9% 탐지도 가능할지도!
 <p align="center">
   <img src="./assets/gt_000030.jpg" width="45%">
   <img src="./assets/gt_000208.jpg" width="45%">
@@ -291,6 +291,7 @@ python ocr/utils/convert_submission.py --json_path outputs/ocr_training/submissi
 
 python runners/save_prob_maps.py preset=example "checkpoint_path='{checkpoint_path}/epoch=##-step=####.ckpt'" "+prob_maps_dir='outputs/prob_maps/hrnet'"  # HRNet
 python runners/save_prob_maps.py preset=example_convnext "checkpoint_path='{checkpoint_path}/epoch=##-step=####.ckpt'" "+prob_maps_dir='outputs/prob_maps/convnext'"  # ConvNeXt
+python runners/ensemble_prob_maps.py --dir_a outputs/prob_maps/hrnet_tta --dir_b outputs/prob_maps/convnext_tta --weight_a 0.XX --weight_b 0.XX --output outputs/ensemble.json  # ensemble
 ```
 
 ---
@@ -311,7 +312,7 @@ python runners/save_prob_maps.py preset=example_convnext "checkpoint_path='{chec
 
 #### 3. GT의 패턴 학습 위한 augmentation 강화
 - **가설:** 파일명, bounding box 등을 근거로, 동일 라벨링 업체가 동일 방법으로 자동화 검출한 뒤 학습/검증/평가 데이터로 랜덤 분류한 것으로 추정. 그러면 인간의 기준으로 학습/검증 데이터의 박스 오류(뒷면 글씨, 낙서, 개인정보 마스킹 일관성 없음, 배경 글자 등)는 평가 GT에도 동일하게 적용될 것이다.
-- **결과:** 모델이 GT 라벨 노이즈 패턴의 경향성까지 학습하도록 비침, 이염 등 반영하기 위해 augmentation 하려면 다른 영수증 이미지를 overlay 해야 한다. 테스트케이스 생성 시간 부족으로 TTA로 대체, 실패
+- **결과:** 모델이 GT 라벨 노이즈 패턴의 경향성까지 학습하도록 비침, 이염 등 반영하기 위해 augmentation 하려면 다른 영수증 이미지를 overlay 해야 한다. 테스트케이스 생성 시간 부족으로 TTA로 대체
 
 #### 4. 영수증 이외 배경 포함 여부
 - **가설:** 평가 데이터에서 배경을 모두 쳐내고 영수증만 남기면 어떨까?
@@ -415,7 +416,8 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - **시도:** 최종 추론 모델을 사용하여 검증 GT를 시각화하여 비교하고, box miss rate를 통계낸 결과 전체 평균 4.2%<br>
   private shakeup 우려되나 최종 모델인 관계로 재학습 시간은 부족, 더 많은 GT 영역을 잡아낼 TTA 시도
 - **결과:** brightness/contrast, multi-scale (1280+1600) 등등 모두 LB 변화없거나 H-Mean 하락<br>
-  GT 자체의 노이즈 편향이 커서 수치적 갱신보다는 모델의 강건성을 유지하는 방향으로 최종 결정
+  GT 자체의 노이즈 편향이 커서 수치적 갱신보다는 모델의 강건성을 유지하는 방향으로 최종 결정<br>
+  (generalization을 택하느냐 LB 떡상을 위해 optimization을 택하느냐 그것이 문제로다..😂)
 
 ---
 
@@ -578,7 +580,6 @@ test : 음수  1건 / 초과 101건 (약 24%)
     </tr>
   </tbody>
 </table>
-<br>
 
 ![wandb_01](./assets/wandb_01.png)
 ![wandb_02](./assets/wandb_02.png)
@@ -594,7 +595,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - **Accuracy (Public):** 0.9897, 0.9891
 - **Accuracy (Private):** 0.9861 (unselected)
 
-### Leaderboard Rank: No. 1 (Solo Entry) 🏆 (mid H-Mean: 0.9897 / final H-Mean: 0.9857)
+### Leaderboard Rank: No. 1 (Solo Entry) 🏆 [mid: 0.9897 / final: 0.9857]
 ![submission](./assets/submission.png)
 ![leaderboard mid](./assets/leaderboard_mid.png)
 ![leaderboard final](./assets/leaderboard_final.png)
@@ -680,6 +681,6 @@ test : 음수  1건 / 초과 101건 (약 24%)
 ### Project Retrospective
 기존 대회들에선 리더보드 점수 올리기에만 매몰되어 실험기록을 W&B에만 주로 맡기는 바람에 산출물 작성시에 (정신도 몽롱한 상태에서) 애로사항이 많았습니다.<br>
 따라서 이번 대회는 LB 점수 지상주의 습관을 지양하고 과정을 더 중요시하기 위해 실험을 서두르지 않았습니다. 순간적인 아이디어가 떠오른다고 일단 코드부터 우당탕탕 고치려는 손가락을 뿌리치며 가설을 정리하고 꼼꼼히 코드 변경사항들을 기록하고 점수 변화의 요인 추적에 더 집중했습니다. (이를 위해 직접 개발한 실험 관리 도구인 KattPaw를 활용, 버전별로 코드 변경 사항만 따로 확인해서 내용을 정리했고 실험 실패시 복원도 쉬워서 뿌듯했습니다. 다만 이번 대회처럼 복잡한 디렉토리 구조에서는 한계점을 느끼며 앱 수정 아이디어도 많이 얻었습니다.)<br>
-같은 CV 계열인 문서 분류 대회의 우승 경험이 큰 도움이 되었습니다. 이미 체크포인트로 숱한 삽질했던 고인물이라 기존 대회 중 가장 복잡한 구조였음에도 쉽게 적응이 가능했고 그 때 좋은 결과를 얻었던 실험들과 사용 모델들을 참고하여 새로운 기법들을 추가한 결과, CV 대회 2관왕을 달성할 수 있었습니다! (근데 이번엔 참여자가 몇 명이죠? ...😅)
+같은 CV 계열인 문서 분류 대회의 우승 경험이 큰 도움이 되었습니다. 이미 체크포인트로 숱한 삽질했던 고인물이라 그간 6개 대회 중 베이스라인이 가장 난해한 구조였음에도 쉽게 적응이 가능했고 문서 분류 대회 때 좋은 결과를 얻었던 실험들과 사용 모델들을 참고하여 새로운 기법들을 추가한 결과, CV 대회 2관왕을 달성할 수 있었습니다! (근데 이번엔 참여자가 몇 명이죠? ...😅)
 
 <br>
