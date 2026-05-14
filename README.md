@@ -145,6 +145,7 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 │   │   │   ├── hrnet/...
 │   │   │   └── hrnet_tta/...
 │   │   └── submission.csv                  # 추론 후 제출할 파일 생성
+│   ├── postprocessing/...                  # 시각화 & 후처리 테스트 코드 (GitHub 관리안함)
 │   ├── runners/
 │   │   ├── predict.py                      # 추론 실행파일
 │   │   ├── test.py                         # 검증 실행파일
@@ -224,9 +225,18 @@ images:
   <img src="./assets/boxes_002971.jpg" width="45%">
 </p>
 
-#### 9. polygon 형태 비교
+#### 9. polygon 형태 비교 (V08 실험 결과로 중간 점검)
 > 학습/검증 데이터: 선은 직선에 가깝고 모서리는 사각형에 가깝다.<br>
 > 평가 데이터: 선이 자글자글하고 모서리가 둥글다.
+
+#### 10. 검증 GT 시각화 비교 (최종 추론 모델 사용)
+> 검증 GT는 json 생성이 되지 않으므로 ocr_utils.py를 활용, 신규 코드 작성<br>
+> HRNet, ConvNeXt 추론 모델 모두 GT의 랜덤 뒷면 글자 비침이나 노이즈 등에 대한 거대 박스를 못 잡고 있다. (GT: red)<br>
+> 역설적으로 GT에 사용된 모델보다 내 모델이 더 좋은거 같은데? 🤔
+<p align="center">
+  <img src="./assets/gt_000030.jpg" width="45%">
+  <img src="./assets/gt_000208.jpg" width="45%">
+</p>
 
 ---
 
@@ -295,9 +305,8 @@ python runners/save_prob_maps.py preset=example_convnext "checkpoint_path='{chec
 </p>
 
 #### 3. GT의 패턴 학습 위한 augmentation 강화
-- **가설:** 파일명, bounding box 등을 근거로, 동일 라벨링 업체가 동일 방법으로 자동화 검출한 뒤 학습/검증/평가 데이터로 랜덤 분류한 것으로 추정. 그러면 인간의 기준으로 학습/검증 데이터의 박스 오류(뒷면 글씨, 낙서, 개인정보 마스킹 일관성 없음, 배경 글자 등)는 평가 GT에도 동일하게 적용될 것이다.<br>
-  GT = 라벨러의 일관된 패턴 (정답 ≠ 완벽한 정답)
-- **결과:** 모델이 GT 라벨 노이즈 패턴의 경향성까지 학습하도록 비침, 이염 등 반영하기 위해 augmentation 하려면 다른 영수증 이미지를 overlay 해야 한다.
+- **가설:** 파일명, bounding box 등을 근거로, 동일 라벨링 업체가 동일 방법으로 자동화 검출한 뒤 학습/검증/평가 데이터로 랜덤 분류한 것으로 추정. 그러면 인간의 기준으로 학습/검증 데이터의 박스 오류(뒷면 글씨, 낙서, 개인정보 마스킹 일관성 없음, 배경 글자 등)는 평가 GT에도 동일하게 적용될 것이다.
+- **결과:** 모델이 GT 라벨 노이즈 패턴의 경향성까지 학습하도록 비침, 이염 등 반영하기 위해 augmentation 하려면 다른 영수증 이미지를 overlay 해야 한다. 테스트케이스 생성 시간 부족으로 TTA로 대체, 실패
 
 #### 4. 영수증 이외 배경 포함 여부
 - **가설:** 평가 데이터에서 배경을 모두 쳐내고 영수증만 남기면 어떨까?
@@ -397,6 +406,11 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - **시도:** Recall이 0.9902를 기록한 V16.3(H-Mean 0.9894)의 경우 Precision이 0.9889로 많이 낮아 V13 후처리와 유사한 시도 재도전
 - **결과:** thresh 0.12, box_thresh 0.42, polygon_unclip_ratio 1.35 모두 실패하며 파라미터 튜닝은 한계에 도달함 확인
 
+#### V20: TTA: brightness/contrast, multi-scale
+- **시도:** 최종 추론 모델을 사용하여 검증 GT를 시각화하여 비교하고, missing rate를 통계낸 결과 전체 평균 4.2%<br>
+  private shakeup 우려되나 최종 모델인 관계로 재학습 시간은 부족, 더 많은 GT 영역을 잡아낼 TTA 시도
+- **결과:** brightness/contrast, multi-scale (1280+1600) 모두 실패
+
 ---
 
 ## **📊 Experiment Logger**
@@ -413,6 +427,17 @@ test : 음수  1건 / 초과 101건 (약 24%)
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td align="center">22</td>
+      <td align="center">260514</td>
+      <td>ensemble+TTA</td>
+      <td align="center"></td>
+      <td align="center"></td>
+      <td align="center"></td>
+      <td align="center"><b>0.9897</b></td>
+      <td align="center"><b>0.9897</b></td>
+      <td align="center"><b>0.9898</b></td>
+    </tr>
     <tr>
       <td align="center">18</td>
       <td align="center">260513</td>
@@ -556,11 +581,11 @@ test : 음수  1건 / 초과 101건 (약 24%)
 
 ## **🚀 Result**
 ### Champion Model Info
-- **Version:** V18 (ensemble+TTA), V13 (DBNet++ / HRNet-W44)
+- **Version:** V22 (ensemble+TTA), V13 (DBNet++ / HRNet-W44)
 - **Training Time:** 12h 53m
 - **Time per Epoch:** 20m 53s
 - **Selected CKPT:** Epoch 28
-- **Accuracy:** 0.9896, 0.9891
+- **Accuracy:** 0.9897, 0.9891
 
 ### Leaderboard Rank: No. 1 🏆 (Solo Entry)
 ![submission](./assets/submission.png)
@@ -629,6 +654,9 @@ test : 음수  1건 / 초과 101건 (약 24%)
 #### V18: ensemble + TTA
 - ensemble + TTA (hflip) 재시도 후 LB H-Mean 최고점 갱신
 - HRNet-W44 단독 TTA은 ensemble보다 효과 낮음
+
+#### V22: TTA > ensemble
+- 기존 ensemble 비율에서 TTA 이후 시도하지 않았던 비율 테스트
 
 ---
 
