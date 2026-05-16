@@ -330,7 +330,7 @@ python runners/ensemble_prob_maps.py --dir_a outputs/prob_maps/hrnet_tta --dir_b
 
 #### 7. HRnet vs ConvNeXt ensemble
 - **가설:** 학습 데이터 정답에 낙서나 개인정보 마스킹 덜 된 쪼가리도 박스 친 케이스 확인. 그럼 HRNet보다 더 정교하게 박스치고 CNN인 ConvNeXt와 앙상블을 시도해보면 어떨까?
-- **결과:** Recall이 높은 ConvNeXt를 weighted average ensemble하여 LB H-Mean 최고점 갱신 (Recall에서 마의 0.99대 뚫음)
+- **결과:** Recall이 높은 ConvNeXt를 weighted average ensemble하여 LB H-Mean 최고점 경신 (Recall에서 마의 0.99대 뚫음)
 
 #### 8. test.json의 이미지 사이즈 활용 여부
 - **가설:** 빈 test.json에 이미지 사이즈만 기재되어 있는데 (이미지의 실제 사이즈와 동일 확인) 모두 제각각이다. 이걸 활용할 방법이 있을까?<br>
@@ -374,13 +374,13 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - **증상:** scheduler와 학습률을 반영했는데도 최종 best epoch 3건이 동일함, 10시간 낭비
 - **조치:** architecture 오류 수정 반영, W&B 그래프를 보면 기존에도 스케줄러가 반영 없었던 것으로 추정
 
-#### V11: best epoch 갱신 정체 후 지속적인 갱신
+#### V11: best epoch 경신 정체 후 지속적인 갱신
 - **증상:** 7차 이상 epoch 갱신이 정체되어 실험을 중단하려는 때에 갑작스런 뒷심 갱신?
 - **결과:** scheduler 이슈로 CosineAnnealingLR이 제대로 작동하지 못했었기 때문에 patience를 10회로 늘린 보람이 있나 싶었는데..ㅠ 삼진아웃은 국룰인가.
 
 #### V12: 잦은 loss spike
 - **증상:** batch가 2로 너무 작아 gradient가 불안정하고 loss spike가 잦다.
-- **결과:** 백본 모델 HRNet-W44로로 낮춰도 batch 2 이상은 OOM
+- **결과:** 백본 모델 HRNet-W44로 낮춰도 batch 2 이상은 OOM
 <p align="center">
   <img src="./assets/v07.png" width="45%">
   <img src="./assets/v11.png" width="45%">
@@ -399,7 +399,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - **조치:** Base로 모델 scale-up 후 첫 epoch 확인하니 0.98대로 정상화
 
 #### V14: HRNet-W44 vs ConvNeXt-Base ensemble
-- **시도:** 앙상블 시도하기 전에 실수로 ConvNeXt의 best epoch를 삭제해버림..😨 무려 14h 33m 돌린건데!<br>
+- **시도:** 앙상블 시도하기 전에 실수로 ConvNeXt의 best epoch을 삭제해버림..😨 무려 14h 33m 돌린건데!<br>
   추론 JSON으로 NMS 앙상블이라도 시도
 - **결과:** LB H-Mean 0.9780으로 큰 하락
 
@@ -410,13 +410,13 @@ test : 음수  1건 / 초과 101건 (약 24%)
 
 #### V17: postprocessing hyperparameter tuning
 - **시도:** Recall이 0.9902를 기록한 V16.3(H-Mean 0.9894)의 경우 Precision이 0.9889로 많이 낮아 V13 후처리와 유사한 시도 재도전
-- **결과:** thresh 0.12, box_thresh 0.42, polygon_unclip_ratio 1.35 모두 갱신 실패하며 파라미터 튜닝은 한계에 도달함 확인
+- **결과:** thresh 0.12, box_thresh 0.42, polygon_unclip_ratio 1.35 모두 경신 실패하며 파라미터 튜닝은 한계에 도달함 확인
 
 #### V20: TTA: brightness/contrast, multi-scale
 - **시도:** 최종 추론 모델을 사용하여 검증 GT를 시각화하여 비교하고, box miss rate를 통계낸 결과 전체 평균 4.2%<br>
   private shakeup 우려되나 최종 모델인 관계로 재학습 시간은 부족, 더 많은 GT 영역을 잡아낼 TTA 시도
 - **결과:** brightness/contrast, multi-scale (1280+1600) 등등 모두 LB 변화없거나 H-Mean 하락<br>
-  GT 자체의 노이즈 편향이 커서 수치적 갱신보다는 모델의 강건성을 유지하는 방향으로 최종 결정<br>
+  GT 자체의 노이즈 편향이 커서 수치적 경신보다는 모델의 강건성을 유지하는 방향으로 최종 결정<br>
   (generalization을 택하느냐 LB 떡상을 위해 optimization을 택하느냐 그것이 문제로다..😂)
 
 ---
@@ -627,7 +627,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 
 #### V08: epoch=18-step=31084.ckpt
 - 백본 모델 변경으로 학습 시간 길어지기 시작하여 tmux 적용
-- 로컬 점수는 최고점 갱신했으나 LB 갱신못함
+- 로컬 점수는 최고점 경신했으나 LB 경신못함
 
 #### V10: epoch=11-step=19632.ckpt
 - scheduler: CosineAnnealingLR
@@ -660,7 +660,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - postprocessing hyperparameter tuning
 
 #### V18: ensemble + TTA
-- ensemble + TTA (hflip) 재시도 후 LB H-Mean 최고점 갱신
+- ensemble + TTA (hflip) 재시도 후 LB H-Mean 최고점 경신
 - HRNet-W44 단독 TTA은 ensemble보다 효과 낮음
 
 #### V22: TTA > ensemble
@@ -681,6 +681,6 @@ test : 음수  1건 / 초과 101건 (약 24%)
 ### Project Retrospective
 기존 대회들에선 리더보드 점수 올리기에만 매몰되어 실험기록을 W&B에만 주로 맡기는 바람에 산출물 작성시에 (정신도 몽롱한 상태에서) 애로사항이 많았습니다.<br>
 따라서 이번 대회는 LB 점수 지상주의 습관을 지양하고 과정을 더 중요시하기 위해 실험을 서두르지 않았습니다. 순간적인 아이디어가 떠오른다고 일단 코드부터 우당탕탕 고치려는 손가락을 뿌리치며 가설을 정리하고 꼼꼼히 코드 변경사항들을 기록하고 점수 변화의 요인 추적에 더 집중했습니다. (이를 위해 직접 개발한 실험 관리 도구인 KattPaw를 활용, 버전별로 코드 변경 사항만 따로 확인해서 내용을 정리했고 실험 실패시 복원도 쉬워서 뿌듯했습니다. 다만 이번 대회처럼 복잡한 디렉토리 구조에서는 한계점을 느끼며 앱 수정 아이디어도 많이 얻었습니다.)<br>
-같은 CV 계열인 문서 분류 대회의 우승 경험이 큰 도움이 되었습니다. 이미 체크포인트로 숱한 삽질했던 고인물이라 그간 6개 대회 중 베이스라인이 가장 난해한 구조였음에도 쉽게 적응이 가능했고 문서 분류 대회 때 좋은 결과를 얻었던 실험들과 사용 모델들을 참고하여 새로운 기법들을 추가한 결과, CV 대회 2관왕을 달성할 수 있었습니다! (근데 이번엔 참여자가 몇 명이죠? ...😅)
+같은 CV 계열인 문서 분류 대회의 우승 경험이 큰 도움이 되었습니다. 이미 체크포인트로 숱한 삽질했던 고인물이라, 그간 6개 대회 중 베이스라인이 가장 난해한 구조였음에도 쉽게 적응이 가능했고 문서 분류 대회 때 좋은 결과를 얻었던 실험들과 사용 모델들을 참고하여 새로운 기법들을 추가한 결과, CV 대회 2관왕을 달성할 수 있었습니다! (근데 이번엔 참여자가 몇 명이죠? ...😅)
 
 <br>
