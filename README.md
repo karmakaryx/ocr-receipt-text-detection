@@ -101,6 +101,7 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 │   │   ├── predict.yaml                    # Runner를 실행할 때 필요한 설정값
 │   │   ├── test.yaml                       # Runner를 실행할 때 필요한 설정값
 │   │   └── train.yaml                      # Runner를 실행할 때 필요한 설정값
+│   ├── eda/                                # EDA, 시각화 & 후처리 테스트 코드 (일부 GitHub 관리안함)
 │   ├── ocr/                                # 각 디렉토리마다 __init__.py 존재 생략
 │   │   ├── datasets/
 │   │   │   ├── base.py                     # 데이터 로딩 및 전처리를 위한 기본 추상 클래스
@@ -145,7 +146,6 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 │   │   │   ├── hrnet/...
 │   │   │   └── hrnet_tta/...
 │   │   └── submission.csv                  # 추론 후 제출할 파일 생성
-│   ├── postprocessing/...                  # 시각화 & 후처리 테스트 코드 (GitHub 관리안함)
 │   ├── runners/
 │   │   ├── predict.py                      # 추론 실행파일
 │   │   ├── test.py                         # 검증 실행파일
