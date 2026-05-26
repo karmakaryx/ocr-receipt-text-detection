@@ -36,7 +36,7 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 ---
 
 ## **📋 Competition Info**
-### 일정 (Timeline)
+### 일정 (Timeline): 개인 참여 허용
 - 2026.05.04 09:00 ~ 2026.05.14 18:00 (Competition)
 - 2026.05.15 15:00 ~ 2026.05.15 18:00 (Seminar)
 
@@ -601,7 +601,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 ![leaderboard final](./assets/leaderboard_final.png)
 
 ### Presentation
-- [[PDF] OCR Seminar Presentation](https://github.com/karmakaryx/ocr-receipt-text-detection/blob/main/assets/semiar_ocr.pdf)
+- [[PDF] OCR Seminar Presentation](https://github.com/karmakaryx/ocr-receipt-text-detection/blob/main/assets/seminar_ocr.pdf)
 
 ---
 
