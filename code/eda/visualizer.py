@@ -1,7 +1,7 @@
-import cv2
-import numpy as np
 import json
 import os
+import cv2
+import numpy as np
 from dotenv import load_dotenv
 from tqdm import tqdm
 
