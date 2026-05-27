@@ -1,0 +1,10 @@
+# @package _global_
+
+defaults:
+  - base
+  - /preset/datasets/db
+  - /preset/models/model_example
+  - /preset/models/decoder/unet_convnext
+  - /preset/models/encoder/timm_backbone_convnext
+  - /preset/lightning_modules/base
+  - _self_
