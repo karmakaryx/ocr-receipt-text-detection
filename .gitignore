@@ -232,4 +232,6 @@ wandb/
 *.pkl
 *.h5
 *.pt
+drp.*.*
+__init__.py
 baseline.ipynb
