@@ -1,0 +1,16 @@
+# Note by Karyx💫: This file provided default parameters. Please configure and implement your own settings.
+# @package _global_
+
+models:
+  head:
+    _target_: ${head_path}.DBHead
+    in_channels: 256                 # Input layer channel
+    upscale: 4                       # Output layer scale factor
+    k: 50                            # The amplifying factor
+    bias: False                      # Use bias or not in LayerNorm
+    smooth: False                    # Use smooth or not in Upsample
+    postprocess:
+      thresh: 0.3                    # Binarization threshold
+      box_thresh: 0.4                # Detection Box threshold
+      max_candidates: 300            # Limit the number of detection boxes
+      use_polygon: False             # Detection Box Type (QUAD or POLY)

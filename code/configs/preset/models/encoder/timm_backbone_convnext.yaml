@@ -1,0 +1,8 @@
+# @package _global_
+
+models:
+  encoder:
+    _target_: ${encoder_path}.TimmBackbone
+    model_name: 'convnext_base'
+    select_features: [0, 1, 2, 3]  # convnext: 4 stages (0~3), channels: [96, 192, 384, 768]
+    pretrained: true
