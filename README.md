@@ -72,108 +72,6 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 
 ---
 
-## **⚙️ Components**
-### Workflow
-![workflow](./assets/workflow.png)
-
-### Directory
-```
-├── assets/...                              # README images & PDF
-├── code/
-│   ├── configs/
-│   │   ├── preset/
-│   │   │   ├── datasets/
-│   │   │   │   └── db.yaml                 # Dataset, Transform 등 데이터에 관련된 설정값
-│   │   │   ├── lightning_modules/
-│   │   │   │   └── base.yaml               # PyTorch Lightning 실행에 관련된 설정값
-│   │   │   ├── models/                     # 모델 구성에 필요한 각각의 모듈에 관련된 설정값
-│   │   │   │   ├── decoder/
-│   │   │   │   │   └── unet.yaml
-│   │   │   │   ├── encoder/
-│   │   │   │   │   └── timm_backbone.yaml
-│   │   │   │   ├── head/
-│   │   │   │   │   └── db_head.yaml
-│   │   │   │   ├── loss/
-│   │   │   │   │   └── db_loss.yaml
-│   │   │   │   └── model_example.yaml      # 각 모델 모듈의 설정 파일 및 Optimizer 지정
-│   │   │   ├── base.yaml                   # Hydra 경로 관리 메인 설정
-│   │   │   └── example.yaml                # 각 모듈의 설정 파일 지정
-│   │   ├── predict.yaml                    # Runner를 실행할 때 필요한 설정값
-│   │   ├── test.yaml                       # Runner를 실행할 때 필요한 설정값
-│   │   └── train.yaml                      # Runner를 실행할 때 필요한 설정값
-│   ├── eda/                                # EDA, 시각화 & 후처리 테스트 코드 (일부 GitHub 관리안함)
-│   ├── ocr/                                # 각 디렉토리마다 __init__.py 존재 생략
-│   │   ├── datasets/
-│   │   │   ├── base.py                     # 데이터 로딩 및 전처리를 위한 기본 추상 클래스
-│   │   │   ├── db_collate_fn.py            # 학습 배치를 위한 데이터 정렬 및 패딩 처리 로직
-│   │   │   └── transforms.py               # 이미지 증강 및 텐서 변환 정의
-│   │   ├── lightning_modules/
-│   │   │   ├── callbacks/                  # 학습 중 특정 시점에 실행되는 보조 로직
-│   │   │   └── ocr_pl.py                   # PyTorch Lightning 기반 학습/검증 루프 통합 관리
-│   │   ├── metrics/
-│   │   │   ├── box_types.py                # 좌표 타입 정의 및 유효성 검사
-│   │   │   ├── cleval_metric.py            # OCR 대회 표준 평가 지표 계산 로직
-│   │   │   ├── data.py                     # 평가에 필요한 데이터 구조화 및 핸들링
-│   │   │   ├── eval_functions.py           # GT와 예측값 비교를 위한 세부 평가 함수
-│   │   │   └── utils.py                    # 지표 계산 속도 향상 및 보조 유틸리티
-│   │   ├── models/
-│   │   │   ├── decoder/
-│   │   │   │   ├── asf.py                  # Adaptive Scale Fusion
-│   │   │   │   └── unet.py                 # 검출 성능 향상을 위한 U-Net 기반 디코더 구조
-│   │   │   ├── encoder/
-│   │   │   │   └── timm_backbone.py        # timm 라이브러리를 활용한 다양한 사전학습 백본 지원
-│   │   │   ├── head/
-│   │   │   │   ├── db_head.py              # Differentiable Binarization 방식의 최종 검출 헤드
-│   │   │   │   └── db_postprocess.py       # 확률 맵을 실제 박스 좌표로 변환하는 후처리 로직
-│   │   │   ├── loss/                       # 다양한 손실 함수들
-│   │   │   │   ├── bce_loss.py
-│   │   │   │   ├── db_loss.py              # DBNet 학습을 위한 전용 복합 손실 함수
-│   │   │   │   ├── dice_loss.py
-│   │   │   │   └── l1_loss.py
-│   │   │   └── architecture.py             # encoder-decoder-head를 조립하는 전체 모델 설계도
-│   │   └── utils/
-│   │       ├── convert_submission.py       # 최종 제출 CSV 변환 유틸리티
-│   │       └── ocr_utils.py                # 모델 예측 결과 시각화 유틸리티
-│   ├── outputs/                            # (이하 GitHub 관리안함)
-│   │   ├── ocr_training/
-│   │   │   ├── .hydra/...                  # 실험 최종 설정값 및 오버라이드 스냅샷
-│   │   │   ├── checkpoints/...             # 학습된 모델 가중치(.ckpt) 저장
-│   │   │   ├── logs/...                    # 학습 과정 모니터링 로그
-│   │   │   └── submissions/...             # 추론 JSON (CSV 변환 전)
-│   │   ├── prob_maps/                      # 모델별 예측 확률값(.npy) 저장
-│   │   │   ├── convnext/...
-│   │   │   ├── convnext_tta/...
-│   │   │   ├── hrnet/...
-│   │   │   └── hrnet_tta/...
-│   │   └── submission.csv                  # 추론 후 제출할 파일 생성
-│   ├── runners/
-│   │   ├── predict.py                      # 추론 실행파일
-│   │   ├── test.py                         # 검증 실행파일
-│   │   ├── train.py                        # 학습 실행파일
-│   │   ├── save_prob_maps.py               # 단일 모델 실행 후 확률 맵을 npy로 추출
-│   │   ├── save_prob_maps_tta.py           # 추론 TTA (앙상블 포함)
-│   │   └── ensemble_prob_maps.py           # 최종 앙상블 결과 도출
-│   ├── wandb/...                           # W&B log (GitHub 관리안함)
-│   ├── baseline.ipynb                      # baseline guide (GitHub 관리안함)
-│   └── eda.ipynb                           # EDA Notebook
-├── data/                                   # (이하 GitHub 관리안함)
-│   └── datasets/
-│       ├── images/
-│       │   ├── test/...                    # 평가데이터
-│       │   ├── train/...                   # 학습데이터
-│       │   └── val/...                     # 검증데이터
-│       ├── jsons/
-│       │   ├── test.json                   # 평가좌표 (이미지 사이즈만 존재)
-│       │   ├── train.json                  # 학습좌표
-│       │   └── val.json                    # 검증좌표
-│       └── sample_submission.csv           # 제출파일 template
-├── .gitignore
-├── README.md
-└── requirements.txt
-```
-
----
-
 ## **💾 Data Description**
 ### EDA (Exploratory Data Analysis)
 #### 1. 학습 JSON 구조
@@ -665,6 +563,108 @@ test : 음수  1건 / 초과 101건 (약 24%)
 
 #### V22: TTA > ensemble
 - 기존 ensemble 비율에서 TTA 이후 시도하지 않았던 비율 테스트
+
+---
+
+## **⚙️ Components**
+### Workflow
+![workflow](./assets/workflow.png)
+
+### Directory
+```
+├── assets/...                              # README images & PDF
+├── code/
+│   ├── configs/
+│   │   ├── preset/
+│   │   │   ├── datasets/
+│   │   │   │   └── db.yaml                 # Dataset, Transform 등 데이터에 관련된 설정값
+│   │   │   ├── lightning_modules/
+│   │   │   │   └── base.yaml               # PyTorch Lightning 실행에 관련된 설정값
+│   │   │   ├── models/                     # 모델 구성에 필요한 각각의 모듈에 관련된 설정값
+│   │   │   │   ├── decoder/
+│   │   │   │   │   └── unet.yaml
+│   │   │   │   ├── encoder/
+│   │   │   │   │   └── timm_backbone.yaml
+│   │   │   │   ├── head/
+│   │   │   │   │   └── db_head.yaml
+│   │   │   │   ├── loss/
+│   │   │   │   │   └── db_loss.yaml
+│   │   │   │   └── model_example.yaml      # 각 모델 모듈의 설정 파일 및 Optimizer 지정
+│   │   │   ├── base.yaml                   # Hydra 경로 관리 메인 설정
+│   │   │   └── example.yaml                # 각 모듈의 설정 파일 지정
+│   │   ├── predict.yaml                    # Runner를 실행할 때 필요한 설정값
+│   │   ├── test.yaml                       # Runner를 실행할 때 필요한 설정값
+│   │   └── train.yaml                      # Runner를 실행할 때 필요한 설정값
+│   ├── eda/                                # EDA, 시각화 & 후처리 테스트 코드 (일부 GitHub 관리안함)
+│   ├── ocr/                                # 각 디렉토리마다 __init__.py 존재 생략
+│   │   ├── datasets/
+│   │   │   ├── base.py                     # 데이터 로딩 및 전처리를 위한 기본 추상 클래스
+│   │   │   ├── db_collate_fn.py            # 학습 배치를 위한 데이터 정렬 및 패딩 처리 로직
+│   │   │   └── transforms.py               # 이미지 증강 및 텐서 변환 정의
+│   │   ├── lightning_modules/
+│   │   │   ├── callbacks/                  # 학습 중 특정 시점에 실행되는 보조 로직
+│   │   │   └── ocr_pl.py                   # PyTorch Lightning 기반 학습/검증 루프 통합 관리
+│   │   ├── metrics/
+│   │   │   ├── box_types.py                # 좌표 타입 정의 및 유효성 검사
+│   │   │   ├── cleval_metric.py            # OCR 대회 표준 평가 지표 계산 로직
+│   │   │   ├── data.py                     # 평가에 필요한 데이터 구조화 및 핸들링
+│   │   │   ├── eval_functions.py           # GT와 예측값 비교를 위한 세부 평가 함수
+│   │   │   └── utils.py                    # 지표 계산 속도 향상 및 보조 유틸리티
+│   │   ├── models/
+│   │   │   ├── decoder/
+│   │   │   │   ├── asf.py                  # Adaptive Scale Fusion
+│   │   │   │   └── unet.py                 # 검출 성능 향상을 위한 U-Net 기반 디코더 구조
+│   │   │   ├── encoder/
+│   │   │   │   └── timm_backbone.py        # timm 라이브러리를 활용한 다양한 사전학습 백본 지원
+│   │   │   ├── head/
+│   │   │   │   ├── db_head.py              # Differentiable Binarization 방식의 최종 검출 헤드
+│   │   │   │   └── db_postprocess.py       # 확률 맵을 실제 박스 좌표로 변환하는 후처리 로직
+│   │   │   ├── loss/                       # 다양한 손실 함수들
+│   │   │   │   ├── bce_loss.py
+│   │   │   │   ├── db_loss.py              # DBNet 학습을 위한 전용 복합 손실 함수
+│   │   │   │   ├── dice_loss.py
+│   │   │   │   └── l1_loss.py
+│   │   │   └── architecture.py             # encoder-decoder-head를 조립하는 전체 모델 설계도
+│   │   └── utils/
+│   │       ├── convert_submission.py       # 최종 제출 CSV 변환 유틸리티
+│   │       └── ocr_utils.py                # 모델 예측 결과 시각화 유틸리티
+│   ├── outputs/                            # (이하 GitHub 관리안함)
+│   │   ├── ocr_training/
+│   │   │   ├── .hydra/...                  # 실험 최종 설정값 및 오버라이드 스냅샷
+│   │   │   ├── checkpoints/...             # 학습된 모델 가중치(.ckpt) 저장
+│   │   │   ├── logs/...                    # 학습 과정 모니터링 로그
+│   │   │   └── submissions/...             # 추론 JSON (CSV 변환 전)
+│   │   ├── prob_maps/                      # 모델별 예측 확률값(.npy) 저장
+│   │   │   ├── convnext/...
+│   │   │   ├── convnext_tta/...
+│   │   │   ├── hrnet/...
+│   │   │   └── hrnet_tta/...
+│   │   └── submission.csv                  # 추론 후 제출할 파일 생성
+│   ├── runners/
+│   │   ├── predict.py                      # 추론 실행파일
+│   │   ├── test.py                         # 검증 실행파일
+│   │   ├── train.py                        # 학습 실행파일
+│   │   ├── save_prob_maps.py               # 단일 모델 실행 후 확률 맵을 npy로 추출
+│   │   ├── save_prob_maps_tta.py           # 추론 TTA (앙상블 포함)
+│   │   └── ensemble_prob_maps.py           # 최종 앙상블 결과 도출
+│   ├── wandb/...                           # W&B log (GitHub 관리안함)
+│   ├── baseline.ipynb                      # baseline guide (GitHub 관리안함)
+│   └── eda.ipynb                           # EDA Notebook
+├── data/                                   # (이하 GitHub 관리안함)
+│   └── datasets/
+│       ├── images/
+│       │   ├── test/...                    # 평가데이터
+│       │   ├── train/...                   # 학습데이터
+│       │   └── val/...                     # 검증데이터
+│       ├── jsons/
+│       │   ├── test.json                   # 평가좌표 (이미지 사이즈만 존재)
+│       │   ├── train.json                  # 학습좌표
+│       │   └── val.json                    # 검증좌표
+│       └── sample_submission.csv           # 제출파일 template
+├── .gitignore
+├── README.md
+└── requirements.txt
+```
 
 ---
 
