@@ -8,7 +8,7 @@
 - **GPU:** NVIDIA GeForce RTX 3090 (24GB)
 - **NVIDIA Driver Version:** 535.86.10
 - **CUDA Version:** 12.2 (Runtime: 11.8)
-- **Tool:** VS Code (SSH) / Google Colab
+- **Tool:** VS Code (SSH), Google Colab
 - **Language:** Python 3.10.13
 
 ### Requirements
@@ -36,20 +36,32 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 ---
 
 ## **📋 Competition Info**
-### 일정 (Timeline): 개인 참여 허용
-- 2026.05.04 09:00 ~ 2026.05.14 18:00 (Competition)
-- 2026.05.15 15:00 ~ 2026.05.15 18:00 (Seminar)
-
-### 영수증 글자 검출 대회: 영수증 사진에서 글자 위치를 정확하게 추출하는 태스크 수행
-- 목표: 모델이 더욱 강건한 성능을 낼 수 있도록 generalization과 optimization을 모두 높이면서도, 그 사이의 최적점 찾기
+### 영수증 글자 검출 (Receipt Text Detection)
+- 영수증 사진에서 글자 위치를 정확하게 추출하는 태스크 수행
+- 모델이 더욱 강건한 성능을 낼 수 있도록 generalization과 optimization을 모두 높이면서도, 그 사이의 최적점 찾기
 - 각각의 영수증마다 평균 100여개의 text region이 있으며 polygon 좌표로 labeling 되어 있음
 - 한 이미지 당 최대 글자 영역은 500개까지이며, 500개를 초과하는 글자 영역은 평가 대상에서 제외
 
+### 일정 (Timeline): 개인 출전 허용
+- 2026.05.04 09:00 ~ 2026.05.14 18:00 (Competition)
+- 2026.05.15 15:00 ~ 2026.05.15 17:00 (Seminar)
+
 ### 데이터셋 정보 (Dataset Info)
-- 학습 데이터: 3,272장
-- 검증 데이터: 404장
-- 평가 데이터: 413장
-- 라벨 정보: 각 text word 별 좌표 정보 (CSV 형식의 결과 데이터를 파일로 제출)
+- 학습데이터: 3,272장
+- 검증데이터: 404장
+- 평가데이터: 413장
+- 라벨 정보: 각 text word별 좌표 정보 (CSV 형식의 결과 데이터를 파일로 제출)
+
+### 평가지표 (Evaluation Metric)
+- CLEval (Character Level Evaluation)
+- 리더보드 순위는 H-Mean(Higher is better)으로 순위 결정 (소수점 4번째자리까지)
+- Public 과 Private의 비율은 50:50 이며, 이미지 당 평균 단어 수 균등하게 분배
+
+<div align="center">
+  <img src="https://latex.codecogs.com/svg.image?Recall=\frac{\sum_{i=1}^{|G|}(CorrectNum_i^G-GranulPenalty_i^G)}{\sum_{i=1}^{|G|}TotalNum_i^G}" alt="Recall"/><br><br>
+  <img src="https://latex.codecogs.com/svg.image?Precision=\frac{\sum_{j=1}^{|D|}(CorrectNum_j^D-GranulPenalty_j^D)}{\sum_{j=1}^{|D|}TotalNum_j^D}" alt="Precision"/><br><br>
+  <img src="https://latex.codecogs.com/svg.image?H-mean=\frac{2\times&space;Recall\times&space;Precision}{Recall&plus;Precision}" alt="H-mean"/>
+</div>
 
 ### 규정 (Rule)
 - 학습셋과 검증셋은 구분되어 있지만, 다른 기준으로 재분류 하거나 검증셋을 학습에 사용해도 무방
@@ -57,15 +69,8 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 - 평가 데이터셋 시각화와 TTA(Test Time Augmentaion), SSL(Self-Supervised Learning) 등은 데이터 분석 및 학습에 활용 가능
 - 자동화된 기법이 아닌 인위적인 labeling을 통한 학습은 절대 불가
 
-### 평가지표 (Evaluation Metric)
-- CLEval (Character Level Evaluation)
-- 리더보드 순위는 H-Mean(Higher is better)으로 순위 결정 (소수점 4번째자리까지)
-- Public 과 Private의 비율은 50:50 이며, 이미지 당 평균 단어 수 균등하게 분배
-
-![equation](./assets/equation.png)
-
 ### 유의사항 (Evaluation Guidelines)
-- 이번 대회는 Text Detection이 목적이므로 detection 결과에 대해서만 평가
+- 이번 대회는 text detection이 목적이므로 detection 결과에 대해서만 평가
 - Ground Truth와 Prediction 모두 transcription 정보는 사용안함
 - Ground Truth의 문자 영역에 대한 labeling은 polygon 기준이므로, CLEval 평가도 QUAD가 아닌 POLY방식으로 평가
 - polygon의 좌표는 4점 이상을 대상으로 하며, 3점 이하의 영역은 무시되니 주의
@@ -83,6 +88,7 @@ images:
         └─ points
           └─ List 4개: X Position, Y Position (검출한 text region의 이미지상 좌표)
 ```
+
 #### 2. 평가 feature 구성
 > 헤더행: filename,polygons<br>
 > 데이터행: IMAGE_FILENAME,X Y X Y X Y X Y|X Y X Y X Y X Y|...
@@ -90,7 +96,7 @@ images:
 #### 3. Qualitative Glimpse
 > 영수증은 이미지 크기도 작고 글자도 작고 많다. 이에 맞는 알고리즘과 백본 모델 검색할 것<br>
 > 영수증 자체는 세로로 긴 형태가 대부분이나 배경까지 함께 찍혀 정사각형인 경우 다수<br>
-> 대회 안내와 다르게 학습 데이터 3,273장이 아닌 3,272장
+> 대회 안내와 다르게 학습데이터 3,273장이 아닌 3,272장
 
 #### 4. Images & JSON Inspection
 > 이미지 폴더 내의 이미지 건수와 JSON 목록 건수 및 파일명 일치 여부 확인: 정상<br>
@@ -119,13 +125,13 @@ images:
 > 구겨진 영수증 heatmap: 100% 검출<br>
 > 글자 수 많고 밝기 어둡고 불규칙한 영수증 bounding box: 100% 검출
 <p align="center">
-  <img src="./assets/heatmap_000242.jpg" width="45%">
-  <img src="./assets/boxes_002971.jpg" width="45%">
+  <img src="./assets/heatmap_000242.jpg" alt="heatmap_000242" width="45%"/>
+  <img src="./assets/boxes_002971.jpg" alt="boxes_002971" width="45%"/>
 </p>
 
 #### 9. Polygon 형태 비교 (V08 실험 결과로 중간 점검)
-> 학습/검증 데이터: 선은 직선에 가깝고 모서리는 사각형에 가깝다.<br>
-> 평가 데이터: 선이 자글자글하고 모서리가 둥글다.
+> 학습/검증데이터: 선은 직선에 가깝고 모서리는 사각형에 가깝다.<br>
+> 평가데이터: 선이 자글자글하고 모서리가 둥글다.
 
 #### 10. Miss Rate & Accuracy (앙상블 전 최종 추론 모델 사용)
 > 검증 GT와 최종 추론 모델 사이의 miss rate 4.2%
@@ -137,8 +143,8 @@ images:
 > 역설적으로 GT에 사용된 모델보다 내가 깎은 모델이 더 좋은거 같은데? 🤔<br>
 > 심지어 LB 영끌하느라 억지로 노이즈 과적합시킨 상태임을 고려하면 실물 영수증 99.9% 탐지도 가능할지도!
 <p align="center">
-  <img src="./assets/gt_000030.jpg" width="45%">
-  <img src="./assets/gt_000208.jpg" width="45%">
+  <img src="./assets/gt_000030.jpg" alt="gt_000030" width="45%"/>
+  <img src="./assets/gt_000208.jpg" alt="gt_000208" width="45%"/>
 </p>
 
 ---
@@ -147,23 +153,25 @@ images:
 ### Model Architecture
 #### 1. DBNet
 DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 예측하고 이를 결합해 근사 이진화 맵(Approximate Binary Map)을 생성
-
-![dbnet1](./assets/dbnet1.png)
+<p align="center">
+  <img src="./assets/dbnet1.png" alt="dbnet1" width="100%"/>
+</p>
 
 #### 2. DBNet++
 기존 DBNet의 구조에 ASF(Adaptive Scale Fusion) 모듈을 도입하여, 다양한 크기와 비율을 가진 텍스트에 대해 공간적 어텐션(Spatial Attention)을 적용함으로써 탐지 성능 극대화
-
-![dbnet2](./assets/dbnet2.png)
+<p align="center">
+  <img src="./assets/dbnet2.png" alt="dbnet2" width="100%"/>
+</p>
 
 ### Model Description
 #### 1. ResNet-18
-- 가장 범용적으로 사용되는 백본으로, Skip Connection을 통해 깊은 층에서도 기울기 소실 문제 없이 학습 가능
+- 가장 범용적으로 사용되는 백본으로, Skip Connections를 통해 깊은 층에서도 기울기 소실 문제 없이 학습 가능
 - 연산이 진행될수록 해상도가 낮아지는 downsampling 구조라 이 과정에서 작은 글자의 공간 정보가 손실될 위험
 - 고해상도 특징 맵을 복원하기 위해 별도의 FPN(Feature Pyramid Network) 등이 필수적으로 요구됨
 - 가볍고 빨라서 실시간 처리가 필요한 OCR 서비스나 모바일 환경에 적합
 
 #### 2. ResNet-50
-- ResNet-18과 특징은 동일하나 층이 더 깊고 BottleNeck 구조를 사용하여 복잡한 텍스트 패턴을 더 잘 학습함
+- ResNet-18과 특징은 동일하나 층이 더 깊고 bottleneck 구조를 사용하여 복잡한 텍스트 패턴을 더 잘 학습함
 
 #### 3. HRNet (W44/W48)
 - 이미지의 해상도를 낮췄다가 다시 높이는 기존 방식과 달리, 학습 내내 고해상도를 유지하는 구조
@@ -173,7 +181,7 @@ DBHead를 통해 확률 맵(Probability Map)과 임계값 맵(Threshold Map)을 
 
 #### 4. ConvNeXt-Base
 - Base 모델 특유의 넓은 채널 수를 바탕으로, 복잡한 배경(영수증의 로고, 자연광 반사 등)과 실제 텍스트를 명확히 구분하는 고차원 특징 효과적으로 추출
-- 거대 커널(7x7)을 통한 문맥 파악: 일반적인 CNN보다 큰 커널 사이즈를 사용하여 수용 영역(Receptive Field)을 넓혔으며, 이는 가로로 긴 문장이나 끊겨 있는 텍스트 박스를 하나의 객체로 인식하고 연결하는 검출 성능 향상
+- 거대 커널(7x7)을 통한 문맥 파악: 일반적인 CNN보다 큰 커널 사이즈를 사용하여 수용 영역(receptive field)을 넓혔으며, 이는 가로로 긴 문장이나 끊겨 있는 텍스트 박스를 하나의 객체로 인식하고 연결하는 검출 성능 향상
 - 글로벌 정보 유지: ViT(Vision Transformer)의 설계를 차용한 레이어 구조 덕분에 이미지 전체의 공간적 맥락 잘 유지. 이는 텍스트가 이미지 가장자리에 치우쳐 있거나 매우 작은 크기로 산재해 있는 상황에서도 놓치지 않고 박스를 칠 수 있게 함
 
 #### 5. HRnet vs ConvNeXt ensemble
@@ -196,16 +204,16 @@ python runners/ensemble_prob_maps.py --dir_a outputs/prob_maps/hrnet_tta --dir_b
 
 ## **🕵️‍♀️ Hypothesis Testing**
 #### 1.유효하지 않은 박스에 대한 전처리 여부
-- **가설:** EDA에서 min: 0.0으로 표시된 아주 작은 박스에 대해 전처리가 필요할까?
+- **가설:** EDA에서 min: 0.0으로 표시된 아주 작은 박스에 대해 전처리가 필요할까?<br>
 - **결과:** 코드상에서 2단계 필터링됨 (학습시 점 3개 미만 skip, 추론시 sside < 3이면 필터링)
 
 #### 2. 절취선 등 기호의 박스 포함 여부
-- **가설:** 글자가 아닌 기호나 선 등은 박스에서 제외해야 하지 않을까?<br>
-  최종 추론 json에서 일단 지나치게 길고 가는 선만 제거하는 후처리 로직을 적용해보았다.
+- **가설:** 글자가 아닌 기호나 선 등은 박스에서 제외해야 하지 않을까? 최종 추론 json에서 일단 지나치게 길고 가는 선만 제거하는 후처리 로직을 적용해보았다.
 - **결과:** LB H-Mean 떡락. 영수증에 인쇄된 내용은 바코드 세로줄 빼고 모두 추가되어야 한다.
+
 <p align="center">
-  <img src="./assets/boxes_000494.jpg" width="45%">
-  <img src="./assets/compare_000494.jpg" width="45%">
+  <img src="./assets/boxes_000494.jpg" alt="boxes_000494" width="45%"/>
+  <img src="./assets/compare_000494.jpg" alt="compare_000494" width="45%"/>
 </p>
 
 #### 3. GT의 패턴 학습 위한 augmentation 강화
@@ -213,8 +221,8 @@ python runners/ensemble_prob_maps.py --dir_a outputs/prob_maps/hrnet_tta --dir_b
 - **결과:** 모델이 GT 라벨 노이즈 패턴의 경향성까지 학습하도록 비침, 이염 등 반영하기 위해 augmentation 하려면 다른 영수증 이미지를 overlay 해야 한다. 테스트케이스 생성 시간 부족으로 TTA로 대체
 
 #### 4. 영수증 이외 배경 포함 여부
-- **가설:** 평가 데이터에서 배경을 모두 쳐내고 영수증만 남기면 어떨까?
-- **결과:** 학습 데이터 정답에 배경에 있는 글자도 박스 친 케이스 확인. 인간이 라벨링하지 않은 듯하니 배경도 포함되어야 한다.
+- **가설:** 평가데이터에서 배경을 모두 쳐내고 영수증만 남기면 어떨까?
+- **결과:** 학습데이터 정답에 배경에 있는 글자도 박스 친 케이스 확인. 인간이 라벨링하지 않은 듯하니 배경도 포함되어야 한다.
 
 #### 5. 추론 후처리
 - **가설:** 장시간 학습한 V11, V12 포함 Recall이 모두 현저히 낮다. 원인을 찾으면 강건한 모델이 되지 않을까?
@@ -223,11 +231,11 @@ python runners/ensemble_prob_maps.py --dir_a outputs/prob_maps/hrnet_tta --dir_b
 ![recall](./assets/recall.png)
 
 #### 6. polygon 형태 일치 시도
-- **가설:** 학습 데이터의 polygon은 직선에 가깝고 평가 데이터의 polygon이 좌표가 훨씬 많다. 선을 평평하게 펴보면 어떨까?
+- **가설:** 학습데이터의 polygon은 직선에 가깝고 평가데이터의 polygon이 좌표가 훨씬 많다. 선을 평평하게 펴보면 어떨까?
 - **결과:** CLEval은 박스 모양 자체는 보지 않으므로 polygon_unclip_ratio 1.31 → 1.4로 후처리했으나 LB H-Mean 하락
 
 #### 7. HRnet vs ConvNeXt ensemble
-- **가설:** 학습 데이터 정답에 낙서나 개인정보 마스킹 덜 된 쪼가리도 박스 친 케이스 확인. 그럼 HRNet보다 더 정교하게 박스치고 CNN인 ConvNeXt와 앙상블을 시도해보면 어떨까?
+- **가설:** 학습데이터 정답에 낙서나 개인정보 마스킹 덜 된 쪼가리도 박스 친 케이스 확인. 그럼 HRNet보다 더 정교하게 박스치고 CNN인 ConvNeXt와 앙상블을 시도해보면 어떨까?
 - **결과:** Recall이 높은 ConvNeXt를 weighted average ensemble하여 LB H-Mean 최고점 경신 (Recall에서 마의 0.99대 뚫음)
 
 #### 8. test.json의 이미지 사이즈 활용 여부
@@ -260,8 +268,8 @@ test : 음수  1건 / 초과 101건 (약 24%)
 
 ## **💡 Insights from Trial and Error**
 #### V05: 실험 실패
-- **증상:** V04 실험까지 수행한 후 기본 아키텍처를 DBNet++로 변경하는 과정에서 recall이 0이 되는 현상<br>
-  원인 파악이 불가하여 베이스라인부터 코드 변경 사항을 추적해보니 V04 실험에선 문제없었던 유효 학습률이 임계값 아래로 너무 빨리 떨어져서 가중치 업데이트가 사실상 vanishing 상태였던 것으로 추정<br>
+- **증상:** V04 실험까지 수행한 후 기본 아키텍처를 DBNet++로 변경하는 과정에서 Recall이 0이 되는 현상<br>
+  원인 파악이 불가하여 베이스라인부터 코드 변경 사항을 추적해보니 V04 실험에선 문제없었던 유효 학습률이 임계값 아래로 너무 빨리 떨어져서 가중치 업데이트가 사실상 vanishing 상태였던 것으로 추정
 - **조치:** 학습률을 0.001로 원복하고 AdamW를 차후 SGD로 변경 고려. 알고리즘이나 모델 변경 같은 큰 변경사항을 먼저 수행하지 않으면 자잘한 실험은 모두 시간낭비가 된다.
 
 #### V08: 백본 모델 HRNet-W48로 변경
@@ -272,16 +280,17 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - **증상:** scheduler와 학습률을 반영했는데도 최종 best epoch 3건이 동일함, 10시간 낭비
 - **조치:** architecture 오류 수정 반영, W&B 그래프를 보면 기존에도 스케줄러가 반영 없었던 것으로 추정
 
-#### V11: best epoch 경신 정체 후 지속적인 갱신
-- **증상:** 7차 이상 epoch 갱신이 정체되어 실험을 중단하려는 때에 갑작스런 뒷심 갱신?
+#### V11: best epoch 경신 정체 후 지속적인 경신
+- **증상:** 7차 이상 epoch 경신이 정체되어 실험을 중단하려는 때에 갑작스런 뒷심 경신?
 - **결과:** scheduler 이슈로 CosineAnnealingLR이 제대로 작동하지 못했었기 때문에 patience를 10회로 늘린 보람이 있나 싶었는데..ㅠ 삼진아웃은 국룰인가.
 
 #### V12: 잦은 loss spike
 - **증상:** batch가 2로 너무 작아 gradient가 불안정하고 loss spike가 잦다.
 - **결과:** 백본 모델 HRNet-W44로 낮춰도 batch 2 이상은 OOM
+
 <p align="center">
-  <img src="./assets/v07.png" width="45%">
-  <img src="./assets/v11.png" width="45%">
+  <img src="./assets/v07.png" alt="v07" width="45%"/>
+  <img src="./assets/v11.png" alt="v11" width="45%"/>
 </p>
 
 #### V12: 데이터 증강, TTA
@@ -325,17 +334,17 @@ test : 음수  1건 / 초과 101건 (약 24%)
 <table>
   <thead>
     <tr>
-      <th align="center">NO.</th>
-      <th align="center">DATE</th>
-      <th align="center">MODEL</th>
-      <th align="center" colspan="3">H | P | R (CV)</th>
-      <th align="center" colspan="3">H | P | R (LB)</th>
+      <th>NO.</th>
+      <th>DATE</th>
+      <th>MODEL</th>
+      <th colspan="3">H | P | R (CV)</th>
+      <th colspan="3">H | P | R (LB)</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td align="center">22</td>
-      <td align="center">260514</td>
+      <td align="center">20260514</td>
       <td>ensemble+TTA</td>
       <td align="center"></td>
       <td align="center"></td>
@@ -479,8 +488,8 @@ test : 음수  1건 / 초과 101건 (약 24%)
   </tbody>
 </table>
 
-![wandb_01](./assets/wandb_01.png)
-![wandb_02](./assets/wandb_02.png)
+![wandb1](./assets/wandb1.png)
+![wandb2](./assets/wandb2.png)
 
 ---
 
@@ -495,15 +504,18 @@ test : 음수  1건 / 초과 101건 (약 24%)
 
 ### Leaderboard Rank: No. 1 (Solo Entry) 🏆 [mid: 0.9897 / final: 0.9857]
 ![submission](./assets/submission.png)
-![leaderboard mid](./assets/leaderboard_mid.png)
-![leaderboard final](./assets/leaderboard_final.png)
+![leaderboard](./assets/leaderboard.png)
+![leaderboard_mid](./assets/leaderboard_mid.png)
+![leaderboard_final](./assets/leaderboard_final.png)
 
 ### Presentation
-- [[PDF] OCR Seminar Presentation](https://github.com/karmakaryx/ocr-receipt-text-detection/blob/main/assets/seminar_ocr.pdf)
+- [[PDF] OCR Seminar Presentation](./assets/seminar_ocr.pdf)
 
 ---
 
 ## **📜 Version Log**
+[[Releases] Download Source Code](https://github.com/karmakaryx/ocr-receipt-text-detection/releases)
+
 #### V01: epoch=8-step=1845.ckpt
 - image size 640 기본 유지
 - dataset_base_path 변경, train wandb 사용
@@ -542,7 +554,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - predict postprocessing
 
 #### V13: epoch=28-step=47444.ckpt
-- 검증 데이터 누수로 인한 V11 rollback
+- 검증데이터 누수로 인한 V11 rollback
 - augmentation 추가: bright & contrast
 - unclip_ratio 파라미터화
 - hyperparameter 조정
@@ -561,7 +573,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - ensemble + TTA (hflip) 재시도 후 LB H-Mean 최고점 경신
 - HRNet-W44 단독 TTA은 ensemble보다 효과 낮음
 
-#### V22: TTA > ensemble
+#### V22: TTA → ensemble
 - 기존 ensemble 비율에서 TTA 이후 시도하지 않았던 비율 테스트
 
 ---
@@ -661,6 +673,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 │       │   ├── train.json                  # 학습좌표
 │       │   └── val.json                    # 검증좌표
 │       └── sample_submission.csv           # 제출파일 template
+├── .env.example                            # 경로설정 template
 ├── .gitignore
 ├── README.md
 └── requirements.txt
@@ -673,10 +686,16 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - [[arXiv] Real-time Scene Text Detection with Differentiable Binarization](https://arxiv.org/pdf/1911.08947.pdf)
 - [[GitHub] DBNet](https://github.com/MhLiao/DB)
 - [[arXiv] Real-Time Scene Text Detection with Differentiable Binarization and Adaptive Scale Fusion](https://arxiv.org/pdf/2202.10304.pdf)
-- [[Docs] Hydra](https://hydra.cc/docs/intro/)
+- [[Docs] Hydra: A framework for elegantly configuring complex applications](https://hydra.cc/docs/intro/)
 - [[Docs] PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/)
 - [[arXiv] Character-Level Evaluation for Text Detection and Recognition Tasks](https://arxiv.org/abs/2006.06244)
 - [[GitHub] CLEval](https://github.com/clovaai/CLEval)
+
+### Role & Project Management
+- **역할:**
+- **협업방식:**
+- **기여도 (100%):**
+- **전략 및 성과:**
 
 ### Project Retrospective
 기존 대회들에선 리더보드 점수 올리기에만 매몰되어 실험기록을 W&B에만 주로 맡기는 바람에 산출물 작성시에 (정신도 몽롱한 상태에서) 애로사항이 많았습니다.<br>
