@@ -139,7 +139,7 @@ images:
 
 #### 11. 검증 GT 시각화 비교 (앙상블 전 최종 추론 모델 사용)
 > 검증 GT는 json 생성이 되지 않으므로 ocr_utils.py를 활용, 신규 코드 작성<br>
-> HRNet, ConvNeXt 추론 모델 모두 GT의 ghost text나 노이즈 등에 대한 거대 박스를 못 잡고 있다. (GT: red)<br>
+> HRNet, ConvNeXt 추론 모델 모두 GT의 ghost text나 노이즈 등에 대한 거대 박스를 못 잡고 있다. (GT: red boxes)<br>
 > 역설적으로 GT에 사용된 모델보다 내가 깎은 모델이 더 좋은거 같은데? 🤔<br>
 > 심지어 LB 영끌하느라 억지로 노이즈 과적합시킨 상태임을 고려하면 실물 영수증 99.9% 탐지도 가능할지도!
 <p align="center">
@@ -344,7 +344,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
   <tbody>
     <tr>
       <td align="center">22</td>
-      <td align="center">20260514</td>
+      <td align="center">260514</td>
       <td>ensemble+TTA</td>
       <td align="center"></td>
       <td align="center"></td>
@@ -518,7 +518,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 
 #### V01: epoch=8-step=1845.ckpt
 - image size 640 기본 유지
-- dataset_base_path 변경, train wandb 사용
+- dataset_base_path 변경, train W&B 사용
 
 #### V02: epoch=29-step=6150.ckpt
 - use_polygon: True, max_epochs: 30
@@ -601,13 +601,13 @@ test : 음수  1건 / 초과 101건 (약 24%)
 │   │   │   │   │   └── db_head.yaml
 │   │   │   │   ├── loss/
 │   │   │   │   │   └── db_loss.yaml
-│   │   │   │   └── model_example.yaml      # 각 모델 모듈의 설정 파일 및 Optimizer 지정
+│   │   │   │   └── model_example.yaml      # 각 모델 모듈의 설정 파일 및 optimizer 지정
 │   │   │   ├── base.yaml                   # Hydra 경로 관리 메인 설정
 │   │   │   └── example.yaml                # 각 모듈의 설정 파일 지정
-│   │   ├── predict.yaml                    # Runner를 실행할 때 필요한 설정값
-│   │   ├── test.yaml                       # Runner를 실행할 때 필요한 설정값
-│   │   └── train.yaml                      # Runner를 실행할 때 필요한 설정값
-│   ├── eda/                                # EDA, 시각화 & 후처리 테스트 코드 (일부 GitHub 관리안함)
+│   │   ├── predict.yaml                    # runner를 실행할 때 필요한 설정값
+│   │   ├── test.yaml                       # runner를 실행할 때 필요한 설정값
+│   │   └── train.yaml                      # runner를 실행할 때 필요한 설정값
+│   ├── eda/                                # EDA, 시각화 & 후처리 테스트 코드 (일부 GitHub 관리 제외)
 │   ├── ocr/                                # 각 디렉토리마다 __init__.py 존재 생략
 │   │   ├── datasets/
 │   │   │   ├── base.py                     # 데이터 로딩 및 전처리를 위한 기본 추상 클래스
@@ -640,7 +640,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 │   │   └── utils/
 │   │       ├── convert_submission.py       # 최종 제출 CSV 변환 유틸리티
 │   │       └── ocr_utils.py                # 모델 예측 결과 시각화 유틸리티
-│   ├── outputs/                            # (이하 GitHub 관리안함)
+│   ├── outputs/                            # (GitHub 관리 제외)
 │   │   ├── ocr_training/
 │   │   │   ├── .hydra/...                  # 실험 최종 설정값 및 오버라이드 스냅샷
 │   │   │   ├── checkpoints/...             # 학습된 모델 가중치(.ckpt) 저장
@@ -651,7 +651,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 │   │   │   ├── convnext_tta/...
 │   │   │   ├── hrnet/...
 │   │   │   └── hrnet_tta/...
-│   │   └── submission.csv                  # 추론 후 제출할 파일 생성
+│   │   └── submission.csv                  # 추론 후 제출파일 생성
 │   ├── runners/
 │   │   ├── predict.py                      # 추론 실행파일
 │   │   ├── test.py                         # 검증 실행파일
@@ -659,10 +659,10 @@ test : 음수  1건 / 초과 101건 (약 24%)
 │   │   ├── save_prob_maps.py               # 단일 모델 실행 후 확률 맵을 npy로 추출
 │   │   ├── save_prob_maps_tta.py           # 추론 TTA (앙상블 포함)
 │   │   └── ensemble_prob_maps.py           # 최종 앙상블 결과 도출
-│   ├── wandb/...                           # W&B log (GitHub 관리안함)
-│   ├── baseline.ipynb                      # baseline guide (GitHub 관리안함)
+│   ├── wandb/...                           # W&B log (GitHub 관리 제외)
+│   ├── baseline.ipynb                      # baseline guide (GitHub 관리 제외)
 │   └── eda.ipynb                           # EDA Notebook
-├── data/                                   # (이하 GitHub 관리안함)
+├── data/                                   # (GitHub 관리 제외)
 │   └── datasets/
 │       ├── images/
 │       │   ├── test/...                    # 평가데이터
@@ -692,10 +692,12 @@ test : 음수  1건 / 초과 101건 (약 24%)
 - [[GitHub] CLEval](https://github.com/clovaai/CLEval)
 
 ### Role & Project Management
-- **역할:**
-- **협업방식:**
-- **기여도 (100%):**
-- **전략 및 성과:**
+- **역할:** 실험계획, 설계, 개발, 버전관리, 인프라, 멘토링, 산출물, 발표, 물은 셀프 대회도 셀프
+- **협업방식:** 대회 참여는 2건 했는데 GPU 서버는 1대로 돌려막아야 하는 척박한 환경이라 자아 1과 자아 2를 2개 대회에 병렬로 배치, GPU와 인간 전략의 switching multithreading
+- **기여도 (100%):** 죄다 내가 해냄
+- **전략 및 성과:** 지난 대회부터 개인 단독 출전했고 최종 두 대회 중 1개 이상 참여 가능했기에 장렬하게 불사르고자 두 대회 모두 1위를 목표로 함.<br>
+다만, "네? 대회를 2개 참여해도 GPU는 1대만 제공이 된다구여??😱" GPU 돌려막느라 대회 내내 OCR 모델 돌려놓고 RecSys 다음 전략짜고 RecSys 돌리고 OCR 전략 짜고..<br>
+그래도 랜덤뽑기나 다름없었던 엔트로피 폭발한 지난 IR 대회와 다르게, 이번 대회는 GT 노이즈에 일관된 경향성이 있어 밤새는 보람이 있었음. 그래서 일단 강건한 모델을 만든 후에 GT 노이즈에 과적합시키는 전략으로 1위 달성.
 
 ### Project Retrospective
 기존 대회들에선 리더보드 점수 올리기에만 매몰되어 실험기록을 W&B에만 주로 맡기는 바람에 산출물 작성시에 (정신도 몽롱한 상태에서) 애로사항이 많았습니다.<br>
