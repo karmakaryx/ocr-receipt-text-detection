@@ -1,9 +1,10 @@
 import json
 import os
+from tqdm import tqdm
+
 import cv2
 import numpy as np
 from dotenv import load_dotenv
-from tqdm import tqdm
 
 load_dotenv()
 DATA_PATH = os.getenv("DATA_PATH")
@@ -18,7 +19,7 @@ def generate_inspection(json_path, image_dir, output_dir=OUTPUT_PATH):
         data = json.load(f)
 
     image_items = data.get("images", {}).items()
-    print(f"총 {len(image_items)}장 시각화 시작...")
+    print(f"총 {len(image_items)}장 시각화 시작..")
 
     for img_name, img_info in tqdm(image_items):
         img_path = os.path.join(image_dir, img_name)

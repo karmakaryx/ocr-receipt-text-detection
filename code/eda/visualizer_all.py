@@ -1,10 +1,11 @@
 import json
 import os
-import cv2
-from dotenv import load_dotenv
-from pathlib import Path
 import sys
 sys.path.append(".")
+from pathlib import Path
+
+import cv2
+from dotenv import load_dotenv
 from ocr.utils.ocr_utils import draw_boxes
 
 load_dotenv()
@@ -18,7 +19,7 @@ VAL_GT_JSON = os.path.join(DATA_PATH, "val.json")
 OUTPUT_DIR = OUTPUT_PATH
 
 PRED_CONFIGS = {
-    "hrnet":    os.path.join(DATA_PATH, "submission_val.json"),
+    "hrnet": os.path.join(DATA_PATH, "submission_val.json"),
     # "convnext": "outputs/ocr_training/submissions/convnext_val.json",
     "ensemble": os.path.join(DATA_PATH, "submission_val_tta.json"),
 }
@@ -66,7 +67,7 @@ for filename in gt_data["images"]:
 
 # 모델별 missing 리포트 txt 저장
 for key, rows in reports.items():
-    rows_sorted = sorted(rows, key=lambda x: x[4], reverse=True)  # miss_rate 내림차순
+    rows_sorted = sorted(rows, key=lambda x: x[4], reverse=True)
     report_path = Path(OUTPUT_DIR) / f"missing_{key}.txt"
 
     with open(report_path, "w") as f:
