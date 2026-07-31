@@ -66,7 +66,7 @@ Pillow==10.1.0                                    torchvision==0.16.2+cu118
 ### 규정 (Rule)
 - 학습셋과 검증셋은 구분되어 있지만, 다른 기준으로 재분류 하거나 검증셋을 학습에 사용해도 무방
 - 저작권 및 사용권에 문제가 없는 공개 데이터셋과 사전학습 가중치에 대해서 자유롭게 사용 가능
-- 평가 데이터셋 시각화와 TTA(Test Time Augmentaion), SSL(Self-Supervised Learning) 등은 데이터 분석 및 학습에 활용 가능
+- 평가 데이터셋 시각화와 TTA(Test Time Augmentation), SSL(Self-Supervised Learning) 등은 데이터 분석 및 학습에 활용 가능
 - 자동화된 기법이 아닌 인위적인 labeling을 통한 학습은 절대 불가
 
 ### 유의사항 (Evaluation Guidelines)
