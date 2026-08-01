@@ -3,8 +3,8 @@
 ## **💻 Project Overview**
 ### Environment
 - **OS:** Linux Ubuntu 20.04.6 LTS
-- **System Memory**: 256GB RAM
-- **Computing Power**: 24-Core / 48-Thread Multi-core CPU
+- **System Memory:** 256GB RAM
+- **Computing Power:** 24-Core / 48-Thread Multi-core CPU
 - **GPU:** NVIDIA GeForce RTX 3090 (24GB)
 - **NVIDIA Driver Version:** 535.86.10
 - **CUDA Version:** 12.2 (Runtime: 11.8)
