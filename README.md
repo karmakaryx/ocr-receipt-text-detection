@@ -660,8 +660,7 @@ test : 음수  1건 / 초과 101건 (약 24%)
 │   │   ├── save_prob_maps_tta.py           # 추론 TTA (앙상블 포함)
 │   │   └── ensemble_prob_maps.py           # 최종 앙상블 결과 도출
 │   ├── wandb/...                           # W&B log (GitHub 관리 제외)
-│   ├── baseline.ipynb                      # baseline guide (GitHub 관리 제외)
-│   └── eda.ipynb                           # EDA Notebook
+│   └── baseline.ipynb                      # baseline guide (GitHub 관리 제외)
 ├── data/                                   # (GitHub 관리 제외)
 │   └── datasets/
 │       ├── images/
