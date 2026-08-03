@@ -202,7 +202,7 @@ python runners/ensemble_prob_maps.py --dir_a outputs/prob_maps/hrnet_tta --dir_b
 
 ---
 
-## **🕵️‍♀️ Hypothesis Testing**
+## **🕵️‍♀️ Hypothesis Notes**
 #### 1.유효하지 않은 박스에 대한 전처리 여부
 - **가설:** EDA에서 min: 0.0으로 표시된 아주 작은 박스에 대해 전처리가 필요할까?<br>
 - **결과:** 코드상에서 2단계 필터링됨 (학습시 점 3개 미만 skip, 추론시 sside < 3이면 필터링)
